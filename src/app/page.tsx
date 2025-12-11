@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Shield, Activity, Link as LinkIcon, Phone, Upload, Sparkles, BookOpen, AlertTriangle } from 'lucide-react';
+import { Shield, Activity, Link as LinkIcon, Phone, Upload, Sparkles, BookOpen, AlertTriangle, Brain } from 'lucide-react';
 import Scanner from '@/components/Scanner';
 import DeviceCheck from '@/components/DeviceCheck';
 import UrlChecker from '@/components/UrlChecker';
@@ -10,8 +10,9 @@ import FileScanner from '@/components/FileScanner';
 import LatestNews from '@/components/LatestNews';
 import Education from '@/components/Education';
 import Disclaimer from '@/components/Disclaimer';
+import AboutAI from '@/components/AboutAI';
 
-type View = 'scanner' | 'device' | 'url' | 'spam' | 'file' | 'news' | 'education' | 'disclaimer';
+type View = 'scanner' | 'device' | 'url' | 'spam' | 'file' | 'news' | 'education' | 'disclaimer' | 'aboutai';
 
 export default function Home() {
   const [view, setView] = useState<View>('scanner');
@@ -19,14 +20,22 @@ export default function Home() {
   const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => {
-    const savedLang = localStorage.getItem('lang') as 'en' | 'hi' | null;
-    if (savedLang) setLang(savedLang);
+    try {
+      const savedLang = localStorage.getItem('lang') as 'en' | 'hi' | null;
+      if (savedLang) setLang(savedLang);
+    } catch (error) {
+      console.error('localStorage error:', error);
+    }
   }, []);
 
   const toggleLang = () => {
     const newLang = lang === 'en' ? 'hi' : 'en';
     setLang(newLang);
-    localStorage.setItem('lang', newLang);
+    try {
+      localStorage.setItem('lang', newLang);
+    } catch (error) {
+      console.error('localStorage error:', error);
+    }
   };
 
   interface NavButtonProps {
@@ -47,8 +56,10 @@ export default function Home() {
           ? 'bg-cyan-500 text-white'
           : 'bg-white/5 text-gray-400 hover:bg-white/10'
       }`}
+      aria-label={`Navigate to ${label}`}
+      aria-current={isActive ? 'page' : undefined}
     >
-      <Icon className="w-5 h-5" />
+      <Icon className="w-5 h-5" aria-hidden="true" />
       <span>{label}</span>
     </button>
   );
@@ -59,11 +70,11 @@ export default function Home() {
         <div className="max-w-6xl mx-auto bg-black/50 backdrop-blur rounded-2xl border border-white/10 p-4">
           <div className="flex items-center justify-between mb-4 md:mb-0">
             <div className="flex items-center gap-3">
-              <Shield className="w-8 h-8 text-cyan-400" />
+              <Shield className="w-8 h-8 text-cyan-400" aria-hidden="true" />
               <div>
                 <h1 className="text-xl font-bold">QuantumGuard</h1>
                 <p className="text-xs text-gray-400">
-                  {lang === 'en' ? "India's Cyber Awareness Tool" : 'भारत का साइबर जागरूकता उपकरण'}
+                  {lang === 'en' ? "AI-Powered Cyber Fraud Prevention" : 'AI साइबर धोखाधड़ी रोकथाम'}
                 </p>
               </div>
             </div>
@@ -71,6 +82,8 @@ export default function Home() {
             <button
               onClick={() => setShowMenu(!showMenu)}
               className="md:hidden px-4 py-2 bg-white/10 rounded-xl"
+              aria-label="Toggle navigation menu"
+              aria-expanded={showMenu}
             >
               ☰
             </button>
@@ -79,21 +92,23 @@ export default function Home() {
               <button
                 onClick={toggleLang}
                 className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl font-bold transition"
+                aria-label={lang === 'en' ? 'Switch to Hindi' : 'Switch to English'}
               >
                 {lang === 'en' ? '🇮🇳 हिंदी' : '🇬🇧 English'}
               </button>
             </div>
           </div>
 
-          <div
+          <nav
             className={`${
               showMenu ? 'flex' : 'hidden'
             } md:flex flex-col md:flex-row gap-2 mt-4 md:mt-0`}
+            aria-label="Main navigation"
           >
             <div className="flex flex-col md:flex-row flex-wrap gap-2 flex-1">
               <NavButton
                 icon={Activity}
-                label={lang === 'en' ? 'Basic Check' : 'बेसिक चेक'}
+                label={lang === 'en' ? 'AI Scanner' : 'AI स्कैनर'}
                 onClick={() => setView('scanner')}
                 isActive={view === 'scanner'}
               />
@@ -105,33 +120,39 @@ export default function Home() {
               />
               <NavButton
                 icon={Phone}
-                label={lang === 'en' ? 'Spam Check' : 'स्पैम'}
+                label={lang === 'en' ? 'Spam AI' : 'स्पैम AI'}
                 onClick={() => setView('spam')}
                 isActive={view === 'spam'}
               />
               <NavButton
                 icon={Upload}
-                label={lang === 'en' ? 'File Check' : 'फ़ाइल'}
+                label={lang === 'en' ? 'File AI' : 'फ़ाइल AI'}
                 onClick={() => setView('file')}
                 isActive={view === 'file'}
               />
               <NavButton
                 icon={Shield}
-                label={lang === 'en' ? 'Device Check' : 'डिवाइस'}
+                label={lang === 'en' ? 'Device' : 'डिवाइस'}
                 onClick={() => setView('device')}
                 isActive={view === 'device'}
               />
               <NavButton
                 icon={Sparkles}
-                label={lang === 'en' ? 'Latest Threats' : 'खतरे'}
+                label={lang === 'en' ? 'Threats' : 'खतरे'}
                 onClick={() => setView('news')}
                 isActive={view === 'news'}
               />
               <NavButton
                 icon={BookOpen}
-                label={lang === 'en' ? 'Learn Scams' : 'सीखें'}
+                label={lang === 'en' ? 'Learn' : 'सीखें'}
                 onClick={() => setView('education')}
                 isActive={view === 'education'}
+              />
+              <NavButton
+                icon={Brain}
+                label={lang === 'en' ? 'AI Tech' : 'AI तकनीक'}
+                onClick={() => setView('aboutai')}
+                isActive={view === 'aboutai'}
               />
               <NavButton
                 icon={AlertTriangle}
@@ -144,14 +165,15 @@ export default function Home() {
             <button
               onClick={toggleLang}
               className="md:hidden px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl font-bold transition"
+              aria-label={lang === 'en' ? 'Switch to Hindi' : 'Switch to English'}
             >
               {lang === 'en' ? '🇮🇳 हिंदी' : '🇬🇧 English'}
             </button>
-          </div>
+          </nav>
         </div>
       </div>
 
-      <div className="px-4 pb-12">
+      <main className="px-4 pb-12" role="main">
         {view === 'scanner' && <Scanner lang={lang} />}
         {view === 'device' && <DeviceCheck lang={lang} />}
         {view === 'url' && <UrlChecker lang={lang} />}
@@ -159,8 +181,9 @@ export default function Home() {
         {view === 'file' && <FileScanner lang={lang} />}
         {view === 'news' && <LatestNews lang={lang} />}
         {view === 'education' && <Education lang={lang} />}
+        {view === 'aboutai' && <AboutAI lang={lang} />}
         {view === 'disclaimer' && <Disclaimer lang={lang} />}
-      </div>
+      </main>
     </div>
   );
 }

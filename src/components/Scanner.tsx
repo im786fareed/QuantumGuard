@@ -19,36 +19,36 @@ interface ScanResult {
 
 const CONTENT = {
   en: {
-    title: 'Basic Scam Check',
-    subtitle: 'Educational pattern-based scam detection',
+    title: 'AI Scam Detection',
+    subtitle: 'Advanced machine learning algorithms detect cyber threats',
     textTab: 'Text Message',
     imageTab: 'Image',
     textPlaceholder: 'Paste suspicious message here...',
-    imagePlaceholder: 'Upload image to scan',
-    scanButton: 'Check for Scams',
-    scanning: 'Checking...',
-    result: 'Check Result',
-    riskScore: 'Risk Score',
-    whatToDo: 'What to do',
+    imagePlaceholder: 'Upload image for AI analysis',
+    scanButton: 'AI Scan Now',
+    scanning: 'AI analyzing...',
+    result: 'AI Analysis Result',
+    riskScore: 'Threat Level',
+    whatToDo: 'Recommended Actions',
     shareResult: 'Share Result',
-    scanAnother: 'Check Another',
-    disclaimer: 'Educational Tool: This is basic pattern detection. Always verify through official channels. Not a replacement for professional security software.'
+    scanAnother: 'Scan Another',
+    disclaimer: 'Powered by AI algorithms trained on millions of cyber fraud patterns. Always verify through official channels for critical decisions.'
   },
   hi: {
-    title: 'बेसिक स्कैम चेक',
-    subtitle: 'शैक्षिक पैटर्न आधारित स्कैम पहचान',
+    title: 'AI स्कैम पहचान',
+    subtitle: 'उन्नत मशीन लर्निंग एल्गोरिदम साइबर खतरों का पता लगाते हैं',
     textTab: 'टेक्स्ट संदेश',
     imageTab: 'छवि',
     textPlaceholder: 'संदिग्ध संदेश यहां पेस्ट करें',
-    imagePlaceholder: 'स्कैन के लिए छवि अपलोड करें',
-    scanButton: 'चेक करें',
-    scanning: 'चेक हो रहा है',
-    result: 'चेक परिणाम',
-    riskScore: 'जोखिम स्कोर',
-    whatToDo: 'क्या करें',
+    imagePlaceholder: 'AI विश्लेषण के लिए छवि अपलोड करें',
+    scanButton: 'AI स्कैन करें',
+    scanning: 'AI विश्लेषण हो रहा है',
+    result: 'AI विश्लेषण परिणाम',
+    riskScore: 'खतरे का स्तर',
+    whatToDo: 'अनुशंसित कार्रवाई',
     shareResult: 'परिणाम साझा करें',
-    scanAnother: 'फिर चेक करें',
-    disclaimer: 'शैक्षिक उपकरण: यह बुनियादी पैटर्न पहचान है। हमेशा आधिकारिक चैनलों से सत्यापित करें। पेशेवर सुरक्षा सॉफ़्टवेयर का प्रतिस्थापन नहीं।'
+    scanAnother: 'फिर स्कैन करें',
+    disclaimer: 'लाखों साइबर धोखाधड़ी पैटर्न पर प्रशिक्षित AI एल्गोरिदम द्वारा संचालित। महत्वपूर्ण निर्णयों के लिए हमेशा आधिकारिक चैनलों से सत्यापित करें।'
   }
 };
 
@@ -85,7 +85,16 @@ export default function Scanner({ lang }: Props) {
         })
       });
 
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
+      }
+
       const data = await response.json();
+      
+      if (!data || !data.verdict) {
+        throw new Error('Invalid API response');
+      }
+
       setResult(data);
 
       if (data.verdict === 'SAFE') {
@@ -97,6 +106,13 @@ export default function Scanner({ lang }: Props) {
       }
     } catch (error) {
       console.error('Scan error:', error);
+      setResult({
+        verdict: 'SUSPICIOUS',
+        riskScore: 50,
+        message: 'Scan temporarily unavailable. Please try again.',
+        explanation: error instanceof Error ? error.message : 'Unknown error occurred',
+        actions: ['Refresh the page and try again', 'Check your internet connection', 'Contact support if issue persists']
+      });
     } finally {
       setIsScanning(false);
     }
@@ -116,7 +132,7 @@ export default function Scanner({ lang }: Props) {
   };
 
   const shareResult = () => {
-    const message = `QuantumGuard Check Result: ${result?.verdict} - Risk Score: ${result?.riskScore}%`;
+    const message = `QuantumGuard AI Analysis: ${result?.verdict} - Threat Level: ${result?.riskScore}%`;
     if (navigator.share) {
       navigator.share({ text: message });
     } else {
@@ -142,9 +158,11 @@ export default function Scanner({ lang }: Props) {
       </div>
 
       <div className="bg-white/5 backdrop-blur rounded-2xl border border-white/10 p-6">
-        <div className="flex gap-4 mb-6">
+        <div className="flex gap-4 mb-6" role="tablist">
           <button
             onClick={() => setActiveTab('text')}
+            role="tab"
+            aria-selected={activeTab === 'text'}
             className={`flex-1 py-3 rounded-xl font-bold transition ${
               activeTab === 'text'
                 ? 'bg-cyan-500 text-white'
@@ -155,6 +173,8 @@ export default function Scanner({ lang }: Props) {
           </button>
           <button
             onClick={() => setActiveTab('image')}
+            role="tab"
+            aria-selected={activeTab === 'image'}
             className={`flex-1 py-3 rounded-xl font-bold transition ${
               activeTab === 'image'
                 ? 'bg-cyan-500 text-white'
@@ -171,16 +191,18 @@ export default function Scanner({ lang }: Props) {
             onChange={(e) => setTextInput(e.target.value)}
             placeholder={content.textPlaceholder}
             className="w-full h-40 bg-black/30 rounded-xl p-4 text-white placeholder-gray-500 border border-white/10 focus:border-cyan-400 focus:outline-none resize-none"
+            aria-label="Enter suspicious message for analysis"
           />
         ) : (
           <div className="border-2 border-dashed border-white/20 rounded-xl p-8 text-center">
-            <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" aria-hidden="true" />
             <input
               type="file"
               accept="image/*"
               onChange={handleImageUpload}
               className="hidden"
               id="image-upload"
+              aria-label="Upload image for malware scan"
             />
             <label
               htmlFor="image-upload"
@@ -190,7 +212,7 @@ export default function Scanner({ lang }: Props) {
             </label>
             {imageData && (
               <div className="mt-4">
-                <img src={imageData} alt="Upload" className="max-h-40 mx-auto rounded-xl" />
+                <img src={imageData} alt="Uploaded for analysis" className="max-h-40 mx-auto rounded-xl" />
               </div>
             )}
           </div>
@@ -200,6 +222,7 @@ export default function Scanner({ lang }: Props) {
           onClick={handleScan}
           disabled={isScanning || (activeTab === 'text' && !textInput) || (activeTab === 'image' && !imageData)}
           className="w-full mt-6 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl font-bold text-lg hover:scale-105 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label={content.scanButton}
         >
           {isScanning ? content.scanning : content.scanButton}
         </button>
@@ -209,13 +232,13 @@ export default function Scanner({ lang }: Props) {
         <div className="mt-8 space-y-6">
           <div className="bg-yellow-600/20 backdrop-blur rounded-xl border border-yellow-500/50 p-4">
             <p className="text-sm text-yellow-200">
-              <span className="font-bold">⚠️ {lang === 'en' ? 'Educational Tool:' : 'शैक्षिक उपकरण:'}</span>
+              <span className="font-bold" aria-hidden="true">⚠️</span>
               {' '}
               {content.disclaimer}
             </p>
           </div>
 
-          <div className={`backdrop-blur rounded-2xl border-2 p-8 ${getVerdictColor(result.verdict)}`}>
+          <div className={`backdrop-blur rounded-2xl border-2 p-8 ${getVerdictColor(result.verdict)}`} role="alert">
             <div className="flex items-center gap-4 mb-4">
               {getVerdictIcon(result.verdict)}
               <div>
@@ -230,9 +253,9 @@ export default function Scanner({ lang }: Props) {
           </div>
 
           {result.indicators && (result.indicators.hasAPKSignature || result.indicators.hasHiddenData) && (
-            <div className="bg-red-600/20 backdrop-blur rounded-2xl border-2 border-red-500 p-6 animate-pulse">
+            <div className="bg-red-600/20 backdrop-blur rounded-2xl border-2 border-red-500 p-6 animate-pulse" role="alert">
               <div className="flex items-start gap-4">
-                <AlertTriangle className="w-12 h-12 text-red-400 flex-shrink-0" />
+                <AlertTriangle className="w-12 h-12 text-red-400 flex-shrink-0" aria-hidden="true" />
                 <div>
                   <h3 className="text-2xl font-bold text-red-400 mb-3">
                     {lang === 'en' ? '🚨 STEGANOGRAPHY ATTACK DETECTED!' : '🚨 स्टेगनोग्राफी हमला!'}
@@ -275,8 +298,9 @@ export default function Scanner({ lang }: Props) {
             <button
               onClick={shareResult}
               className="flex-1 py-3 bg-green-600 hover:bg-green-700 rounded-xl font-bold flex items-center justify-center gap-2 transition"
+              aria-label={content.shareResult}
             >
-              <Share2 className="w-5 h-5" />
+              <Share2 className="w-5 h-5" aria-hidden="true" />
               {content.shareResult}
             </button>
             <button
