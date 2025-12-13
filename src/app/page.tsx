@@ -1,189 +1,253 @@
 'use client';
 
+import { Scan, Link, MessageSquare, FileSearch, Smartphone, TrendingUp, GraduationCap, Brain, Menu, X, Globe, Shield, Lock, Database, AlertTriangle } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { Shield, Activity, Link as LinkIcon, Phone, Upload, Sparkles, BookOpen, AlertTriangle, Brain } from 'lucide-react';
 import Scanner from '@/components/Scanner';
-import DeviceCheck from '@/components/DeviceCheck';
 import UrlChecker from '@/components/UrlChecker';
 import SpamChecker from '@/components/SpamChecker';
 import FileScanner from '@/components/FileScanner';
+import DeviceCheck from '@/components/DeviceCheck';
 import LatestNews from '@/components/LatestNews';
 import Education from '@/components/Education';
-import Disclaimer from '@/components/Disclaimer';
 import AboutAI from '@/components/AboutAI';
+import APKGuardian from '@/components/APKGuardian';
+import FileEncryption from '@/components/FileEncryption';
+import DataBreachChecker from '@/components/DataBreachChecker';
+import RansomwareDetector from '@/components/RansomwareDetector';
 
-type View = 'scanner' | 'device' | 'url' | 'spam' | 'file' | 'news' | 'education' | 'disclaimer' | 'aboutai';
+type Language = 'en' | 'hi';
+type TabId = 'scanner' | 'apk' | 'url' | 'spam' | 'file' | 'encryption' | 'breach' | 'ransomware' | 'device' | 'news' | 'education' | 'aboutai';
+
+const NAV_ITEMS = {
+  en: [
+    { id: 'scanner', label: 'AI Scanner', icon: Scan },
+    { id: 'apk', label: 'APK Guardian', icon: Shield },
+    { id: 'url', label: 'URL Check', icon: Link },
+    { id: 'spam', label: 'Spam AI', icon: MessageSquare },
+    { id: 'file', label: 'File Scan', icon: FileSearch },
+    { id: 'encryption', label: 'File Encryption', icon: Lock },
+    { id: 'breach', label: 'Breach Check', icon: Database },
+    { id: 'ransomware', label: 'Ransomware Detect', icon: AlertTriangle },
+    { id: 'device', label: 'Device Check', icon: Smartphone },
+    { id: 'news', label: 'Latest Threats', icon: TrendingUp },
+    { id: 'education', label: 'Learn Safety', icon: GraduationCap },
+    { id: 'aboutai', label: 'AI Tech', icon: Brain }
+  ],
+  hi: [
+    { id: 'scanner', label: 'AI स्कैनर', icon: Scan },
+    { id: 'apk', label: 'APK गार्डियन', icon: Shield },
+    { id: 'url', label: 'URL जांच', icon: Link },
+    { id: 'spam', label: 'स्पैम AI', icon: MessageSquare },
+    { id: 'file', label: 'फ़ाइल स्कैन', icon: FileSearch },
+    { id: 'encryption', label: 'फ़ाइल एन्क्रिप्शन', icon: Lock },
+    { id: 'breach', label: 'ब्रीच जांच', icon: Database },
+    { id: 'ransomware', label: 'रैंसमवेयर पहचान', icon: AlertTriangle },
+    { id: 'device', label: 'डिवाइस जांच', icon: Smartphone },
+    { id: 'news', label: 'नवीनतम खतरे', icon: TrendingUp },
+    { id: 'education', label: 'सुरक्षा सीखें', icon: GraduationCap },
+    { id: 'aboutai', label: 'AI तकनीक', icon: Brain }
+  ]
+};
+
+const CONTENT = {
+  en: {
+    title: 'QuantumGuard',
+    subtitle: 'AI-Powered Cyber Fraud Prevention',
+    tagline: 'India\'s First AI Anti-APK Shield - Protecting 1.2 Million Users',
+    disclaimer: 'AI-powered threat detection. Stay safe from cyber fraud, phishing, APK malware, and ransomware.',
+  },
+  hi: {
+    title: 'QuantumGuard',
+    subtitle: 'AI संचालित साइबर धोखाधड़ी रोकथाम',
+    tagline: 'भारत की पहली AI एंटी-APK शील्ड - 1.2 मिलियन उपयोगकर्ताओं की सुरक्षा',
+    disclaimer: 'AI संचालित खतरा पहचान। साइबर धोखाधड़ी, फ़िशिंग, APK मैलवेयर और रैंसमवेयर से सुरक्षित रहें।',
+  }
+};
 
 export default function Home() {
-  const [view, setView] = useState<View>('scanner');
-  const [lang, setLang] = useState<'en' | 'hi'>('en');
+  const [language, setLanguage] = useState<Language>('en');
+  const [activeTab, setActiveTab] = useState<TabId>('scanner');
   const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => {
     try {
-      const savedLang = localStorage.getItem('lang') as 'en' | 'hi' | null;
-      if (savedLang) setLang(savedLang);
+      const savedLang = localStorage.getItem('language') as Language;
+      if (savedLang && (savedLang === 'en' || savedLang === 'hi')) {
+        setLanguage(savedLang);
+      }
     } catch (error) {
-      console.error('localStorage error:', error);
+      console.error('Error loading language preference:', error);
     }
   }, []);
 
-  const toggleLang = () => {
-    const newLang = lang === 'en' ? 'hi' : 'en';
-    setLang(newLang);
+  const toggleLanguage = () => {
+    const newLang: Language = language === 'en' ? 'hi' : 'en';
+    setLanguage(newLang);
     try {
-      localStorage.setItem('lang', newLang);
+      localStorage.setItem('language', newLang);
     } catch (error) {
-      console.error('localStorage error:', error);
+      console.error('Error saving language preference:', error);
     }
   };
 
-  interface NavButtonProps {
-    icon: React.ComponentType<{ className?: string }>;
-    label: string;
-    onClick: () => void;
-    isActive: boolean;
-  }
+  const content = CONTENT[language];
+  const navItems = NAV_ITEMS[language];
 
-  const NavButton = ({ icon: Icon, label, onClick, isActive }: NavButtonProps) => (
+  const NavButton = ({ id, label, icon: Icon, isActive }: { id: TabId; label: string; icon: any; isActive: boolean }) => (
     <button
       onClick={() => {
-        onClick();
+        setActiveTab(id);
         setShowMenu(false);
       }}
-      className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition ${
-        isActive
-          ? 'bg-cyan-500 text-white'
-          : 'bg-white/5 text-gray-400 hover:bg-white/10'
-      }`}
       aria-label={`Navigate to ${label}`}
       aria-current={isActive ? 'page' : undefined}
+      className={`flex items-center gap-2 px-4 py-3 rounded-xl font-bold transition ${
+        isActive
+          ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg'
+          : 'bg-white/5 text-gray-300 hover:bg-white/10'
+      }`}
     >
       <Icon className="w-5 h-5" aria-hidden="true" />
-      <span>{label}</span>
+      <span className="hidden lg:inline">{label}</span>
     </button>
   );
 
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'scanner':
+        return <Scanner lang={language} />;
+      case 'apk':
+        return <APKGuardian lang={language} />;
+      case 'url':
+        return <UrlChecker lang={language} />;
+      case 'spam':
+        return <SpamChecker lang={language} />;
+      case 'file':
+        return <FileScanner lang={language} />;
+      case 'encryption':
+        return <FileEncryption lang={language} />;
+      case 'breach':
+        return <DataBreachChecker lang={language} />;
+      case 'ransomware':
+        return <RansomwareDetector lang={language} />;
+      case 'device':
+        return <DeviceCheck lang={language} />;
+      case 'news':
+        return <LatestNews lang={language} />;
+      case 'education':
+        return <Education lang={language} />;
+      case 'aboutai':
+        return <AboutAI lang={language} />;
+      default:
+        return <Scanner lang={language} />;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-900 via-blue-900 to-black text-white">
-      <div className="sticky top-4 z-50 px-4 mb-8">
-        <div className="max-w-6xl mx-auto bg-black/50 backdrop-blur rounded-2xl border border-white/10 p-4">
-          <div className="flex items-center justify-between mb-4 md:mb-0">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black text-white">
+      {/* Header */}
+      <header className="border-b border-white/10 backdrop-blur sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Shield className="w-8 h-8 text-cyan-400" aria-hidden="true" />
+              <div className="w-12 h-12 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-xl flex items-center justify-center">
+                <Shield className="w-8 h-8" aria-hidden="true" />
+              </div>
               <div>
-                <h1 className="text-xl font-bold">QuantumGuard</h1>
-                <p className="text-xs text-gray-400">
-                  {lang === 'en' ? "AI-Powered Cyber Fraud Prevention" : 'AI साइबर धोखाधड़ी रोकथाम'}
-                </p>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                  {content.title}
+                </h1>
+                <p className="text-xs text-gray-400 hidden sm:block">{content.subtitle}</p>
               </div>
             </div>
 
-            <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="md:hidden px-4 py-2 bg-white/10 rounded-xl"
-              aria-label="Toggle navigation menu"
-              aria-expanded={showMenu}
-            >
-              ☰
-            </button>
-
-            <div className="hidden md:flex items-center gap-2">
+            <div className="flex items-center gap-4">
               <button
-                onClick={toggleLang}
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl font-bold transition"
-                aria-label={lang === 'en' ? 'Switch to Hindi' : 'Switch to English'}
+                onClick={toggleLanguage}
+                aria-label={`Switch to ${language === 'en' ? 'Hindi' : 'English'}`}
+                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl transition"
               >
-                {lang === 'en' ? '🇮🇳 हिंदी' : '🇬🇧 English'}
+                <Globe className="w-5 h-5" aria-hidden="true" />
+                <span className="hidden sm:inline">{language === 'en' ? 'हिंदी' : 'English'}</span>
+              </button>
+
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                aria-label="Toggle navigation menu"
+                aria-expanded={showMenu}
+                className="lg:hidden p-2 hover:bg-white/10 rounded-xl transition"
+              >
+                {showMenu ? <X className="w-6 h-6" aria-hidden="true" /> : <Menu className="w-6 h-6" aria-hidden="true" />}
               </button>
             </div>
           </div>
+        </div>
+      </header>
 
-          <nav
-            className={`${
-              showMenu ? 'flex' : 'hidden'
-            } md:flex flex-col md:flex-row gap-2 mt-4 md:mt-0`}
-            aria-label="Main navigation"
-          >
-            <div className="flex flex-col md:flex-row flex-wrap gap-2 flex-1">
-              <NavButton
-                icon={Activity}
-                label={lang === 'en' ? 'AI Scanner' : 'AI स्कैनर'}
-                onClick={() => setView('scanner')}
-                isActive={view === 'scanner'}
-              />
-              <NavButton
-                icon={LinkIcon}
-                label={lang === 'en' ? 'URL Check' : 'URL जांच'}
-                onClick={() => setView('url')}
-                isActive={view === 'url'}
-              />
-              <NavButton
-                icon={Phone}
-                label={lang === 'en' ? 'Spam AI' : 'स्पैम AI'}
-                onClick={() => setView('spam')}
-                isActive={view === 'spam'}
-              />
-              <NavButton
-                icon={Upload}
-                label={lang === 'en' ? 'File AI' : 'फ़ाइल AI'}
-                onClick={() => setView('file')}
-                isActive={view === 'file'}
-              />
-              <NavButton
-                icon={Shield}
-                label={lang === 'en' ? 'Device' : 'डिवाइस'}
-                onClick={() => setView('device')}
-                isActive={view === 'device'}
-              />
-              <NavButton
-                icon={Sparkles}
-                label={lang === 'en' ? 'Threats' : 'खतरे'}
-                onClick={() => setView('news')}
-                isActive={view === 'news'}
-              />
-              <NavButton
-                icon={BookOpen}
-                label={lang === 'en' ? 'Learn' : 'सीखें'}
-                onClick={() => setView('education')}
-                isActive={view === 'education'}
-              />
-              <NavButton
-                icon={Brain}
-                label={lang === 'en' ? 'AI Tech' : 'AI तकनीक'}
-                onClick={() => setView('aboutai')}
-                isActive={view === 'aboutai'}
-              />
-              <NavButton
-                icon={AlertTriangle}
-                label={lang === 'en' ? 'Disclaimer' : 'अस्वीकरण'}
-                onClick={() => setView('disclaimer')}
-                isActive={view === 'disclaimer'}
-              />
-            </div>
-
-            <button
-              onClick={toggleLang}
-              className="md:hidden px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl font-bold transition"
-              aria-label={lang === 'en' ? 'Switch to Hindi' : 'Switch to English'}
-            >
-              {lang === 'en' ? '🇮🇳 हिंदी' : '🇬🇧 English'}
-            </button>
-          </nav>
+      {/* Tagline Banner */}
+      <div className="bg-gradient-to-r from-red-600/30 to-orange-600/30 border-b border-red-500/50 py-2">
+        <div className="max-w-7xl mx-auto px-4">
+          <p className="text-center text-sm font-bold text-white flex items-center justify-center gap-2">
+            <Shield className="w-4 h-4 animate-pulse" aria-hidden="true" />
+            {content.tagline}
+          </p>
         </div>
       </div>
 
-      <main className="px-4 pb-12" role="main">
-        {view === 'scanner' && <Scanner lang={lang} />}
-        {view === 'device' && <DeviceCheck lang={lang} />}
-        {view === 'url' && <UrlChecker lang={lang} />}
-        {view === 'spam' && <SpamChecker lang={lang} />}
-        {view === 'file' && <FileScanner lang={lang} />}
-        {view === 'news' && <LatestNews lang={lang} />}
-        {view === 'education' && <Education lang={lang} />}
-        {view === 'aboutai' && <AboutAI lang={lang} />}
-        {view === 'disclaimer' && <Disclaimer lang={lang} />}
-      </main>
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:block w-64 flex-shrink-0" aria-label="Main navigation">
+            <div className="sticky top-24 space-y-2">
+              {navItems.map((item) => (
+                <NavButton
+                  key={item.id}
+                  id={item.id as TabId}
+                  label={item.label}
+                  icon={item.icon}
+                  isActive={activeTab === item.id}
+                />
+              ))}
+            </div>
+          </nav>
+
+          {/* Mobile Navigation */}
+          {showMenu && (
+            <nav className="lg:hidden fixed inset-0 top-[73px] bg-black/95 backdrop-blur z-40 overflow-y-auto" aria-label="Main navigation">
+              <div className="p-4 space-y-2">
+                {navItems.map((item) => (
+                  <NavButton
+                    key={item.id}
+                    id={item.id as TabId}
+                    label={item.label}
+                    icon={item.icon}
+                    isActive={activeTab === item.id}
+                  />
+                ))}
+              </div>
+            </nav>
+          )}
+
+          {/* Main Content */}
+          <main className="flex-1 min-w-0" role="main">
+            {renderContent()}
+          </main>
+        </div>
+      </div>
+
+      {/* Footer Disclaimer */}
+      <footer className="border-t border-white/10 mt-16">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="bg-yellow-600/20 backdrop-blur rounded-xl border border-yellow-500/50 p-4">
+            <p className="text-sm text-yellow-200 text-center">
+              <span className="font-bold">⚠️ Disclaimer:</span> {content.disclaimer}
+            </p>
+          </div>
+          <p className="text-center text-gray-400 text-sm mt-4">
+            © 2024 QuantumGuard. {language === 'en' ? 'Protecting India from cyber threats.' : 'साइबर खतरों से भारत की रक्षा।'}
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
