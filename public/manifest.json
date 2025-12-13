@@ -1,0 +1,24 @@
+{
+  "name": "QuantumGuard - AI Cyber Fraud Prevention",
+  "short_name": "QuantumGuard",
+  "description": "India's AI-powered shield against scams, phishing, ransomware, APK threats and cyber fraud",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#7e22ce",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
