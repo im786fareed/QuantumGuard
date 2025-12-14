@@ -1,6 +1,6 @@
 'use client';
 
-import { Scan, Link, MessageSquare, FileSearch, Smartphone, TrendingUp, GraduationCap, Brain, Menu, X, Globe, Shield, Lock, Database, AlertTriangle } from 'lucide-react';
+import { Scan, Link, MessageSquare, FileSearch, Smartphone, TrendingUp, GraduationCap, Brain, Menu, X, Globe, Shield, Lock, Database, AlertTriangle, Download } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Scanner from '@/components/Scanner';
 import UrlChecker from '@/components/UrlChecker';
@@ -14,14 +14,20 @@ import APKGuardian from '@/components/APKGuardian';
 import FileEncryption from '@/components/FileEncryption';
 import DataBreachChecker from '@/components/DataBreachChecker';
 import RansomwareDetector from '@/components/RansomwareDetector';
+import ThreatIntelligence from '@/components/ThreatIntelligence';
+import SMSGuardian from '@/components/SMSGuardian';
+import DownloadScanner from '@/components/DownloadScanner';
 
 type Language = 'en' | 'hi';
-type TabId = 'scanner' | 'apk' | 'url' | 'spam' | 'file' | 'encryption' | 'breach' | 'ransomware' | 'device' | 'news' | 'education' | 'aboutai';
+type TabId = 'scanner' | 'apk' | 'url' | 'spam' | 'file' | 'encryption' | 'breach' | 'ransomware' | 'device' | 'news' | 'education' | 'aboutai' | 'threats' | 'sms' | 'downloads';
 
 const NAV_ITEMS = {
   en: [
     { id: 'scanner', label: 'AI Scanner', icon: Scan },
+    { id: 'threats', label: 'Threat Intel', icon: TrendingUp },
     { id: 'apk', label: 'APK Guardian', icon: Shield },
+    { id: 'sms', label: 'SMS Guardian', icon: MessageSquare },
+    { id: 'downloads', label: 'Download Scanner', icon: Download },
     { id: 'url', label: 'URL Check', icon: Link },
     { id: 'spam', label: 'Spam AI', icon: MessageSquare },
     { id: 'file', label: 'File Scan', icon: FileSearch },
@@ -35,7 +41,10 @@ const NAV_ITEMS = {
   ],
   hi: [
     { id: 'scanner', label: 'AI स्कैनर', icon: Scan },
+    { id: 'threats', label: 'खतरा इंटेल', icon: TrendingUp },
     { id: 'apk', label: 'APK गार्डियन', icon: Shield },
+    { id: 'sms', label: 'SMS गार्डियन', icon: MessageSquare },
+    { id: 'downloads', label: 'डाउनलोड स्कैनर', icon: Download },
     { id: 'url', label: 'URL जांच', icon: Link },
     { id: 'spam', label: 'स्पैम AI', icon: MessageSquare },
     { id: 'file', label: 'फ़ाइल स्कैन', icon: FileSearch },
@@ -53,14 +62,14 @@ const CONTENT = {
   en: {
     title: 'QuantumGuard',
     subtitle: 'AI-Powered Cyber Fraud Prevention',
-    tagline: 'India\'s First AI Anti-APK Shield - Protecting 1.2 Million Users',
-    disclaimer: 'AI-powered threat detection. Stay safe from cyber fraud, phishing, APK malware, and ransomware.',
+    tagline: 'India\'s First AI Anti-APK Shield - Autonomous Protection 24/7',
+    disclaimer: 'AI-powered autonomous threat detection. Auto-updates from latest cyber news. Assisted SMS/Download scanning.',
   },
   hi: {
     title: 'QuantumGuard',
     subtitle: 'AI संचालित साइबर धोखाधड़ी रोकथाम',
-    tagline: 'भारत की पहली AI एंटी-APK शील्ड - 1.2 मिलियन उपयोगकर्ताओं की सुरक्षा',
-    disclaimer: 'AI संचालित खतरा पहचान। साइबर धोखाधड़ी, फ़िशिंग, APK मैलवेयर और रैंसमवेयर से सुरक्षित रहें।',
+    tagline: 'भारत की पहली AI एंटी-APK शील्ड - 24/7 स्वायत्त सुरक्षा',
+    disclaimer: 'AI संचालित स्वायत्त खतरा पहचान। नवीनतम साइबर समाचार से स्वतः अपडेट। सहायता प्राप्त SMS/डाउनलोड स्कैनिंग।',
   }
 };
 
@@ -116,8 +125,14 @@ export default function Home() {
     switch (activeTab) {
       case 'scanner':
         return <Scanner lang={language} />;
+      case 'threats':
+        return <ThreatIntelligence lang={language} />;
       case 'apk':
         return <APKGuardian lang={language} />;
+      case 'sms':
+        return <SMSGuardian lang={language} />;
+      case 'downloads':
+        return <DownloadScanner lang={language} />;
       case 'url':
         return <UrlChecker lang={language} />;
       case 'spam':
@@ -185,7 +200,7 @@ export default function Home() {
       </header>
 
       {/* Tagline Banner */}
-      <div className="bg-gradient-to-r from-red-600/30 to-orange-600/30 border-b border-red-500/50 py-2">
+      <div className="bg-gradient-to-r from-green-600/30 to-emerald-600/30 border-b border-green-500/50 py-2">
         <div className="max-w-7xl mx-auto px-4">
           <p className="text-center text-sm font-bold text-white flex items-center justify-center gap-2">
             <Shield className="w-4 h-4 animate-pulse" aria-hidden="true" />
@@ -198,7 +213,7 @@ export default function Home() {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Desktop Navigation */}
           <nav className="hidden lg:block w-64 flex-shrink-0" aria-label="Main navigation">
-            <div className="sticky top-24 space-y-2">
+            <div className="sticky top-24 space-y-2 max-h-[calc(100vh-8rem)] overflow-y-auto">
               {navItems.map((item) => (
                 <NavButton
                   key={item.id}
@@ -238,13 +253,13 @@ export default function Home() {
       {/* Footer Disclaimer */}
       <footer className="border-t border-white/10 mt-16">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="bg-yellow-600/20 backdrop-blur rounded-xl border border-yellow-500/50 p-4">
-            <p className="text-sm text-yellow-200 text-center">
-              <span className="font-bold">⚠️ Disclaimer:</span> {content.disclaimer}
+          <div className="bg-green-600/20 backdrop-blur rounded-xl border border-green-500/50 p-4 mb-4">
+            <p className="text-sm text-green-200 text-center">
+              <span className="font-bold">✅ NEW: Autonomous Protection!</span> {content.disclaimer}
             </p>
           </div>
-          <p className="text-center text-gray-400 text-sm mt-4">
-            © 2024 QuantumGuard. {language === 'en' ? 'Protecting India from cyber threats.' : 'साइबर खतरों से भारत की रक्षा।'}
+          <p className="text-center text-gray-400 text-sm">
+            © 2024 QuantumGuard. {language === 'en' ? 'Protecting India from cyber threats 24/7.' : 'साइबर खतरों से भारत की रक्षा 24/7।'}
           </p>
         </div>
       </footer>
