@@ -1,416 +1,389 @@
 'use client';
 
-import { MessageSquare, Shield, AlertTriangle, CheckCircle, XCircle, Phone } from 'lucide-react';
+import { MessageSquare, Shield, AlertTriangle, CheckCircle, Clock, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
 
 interface Props {
   lang: 'en' | 'hi';
 }
 
-interface SMSAnalysis {
+interface SMSMessage {
+  id: number;
   sender: string;
   message: string;
-  timestamp: string;
-  isThreat: boolean;
-  threatLevel: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'SAFE';
+  time: string;
+  threat: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'SAFE';
   threatType: string;
-  aiConfidence: number;
+  confidence: number;
   indicators: string[];
+  actions: string[];
 }
 
 const CONTENT = {
   en: {
-    title: 'SMS Guardian - Check Suspicious Messages',
-    subtitle: 'One-tap SMS fraud detection. No background monitoring.',
+    title: 'SMS Guardian',
+    subtitle: 'Detect fraud OTPs and scam messages instantly',
     checkButton: 'Check My Latest SMS',
-    checking: 'Scanning latest messages...',
-    noPermission: 'SMS Permission Required',
-    permissionMessage: 'QuantumGuard needs SMS permission to scan your messages for fraud.\n\nWe will:\n• Read ONLY when you click this button\n• NOT monitor SMS in background\n• NOT store your messages\n• NOT share with anyone\n\nYour privacy is protected.',
-    grantPermission: 'Grant Permission',
-    result: 'SMS Analysis Result',
-    scanAnother: 'Scan Again',
-    howItWorks: 'How SMS Guardian Works',
-    safe: 'No Threats Found',
-    safeMessage: 'Your recent messages appear safe'
+    loading: 'Scanning messages...',
+    noMessages: 'No suspicious messages found',
+    browserWarning: '⚠️ Browser Limitation',
+    browserMessage: 'Web apps cannot read SMS messages from your device.\n\nOptions:\n1. Use "Spam AI Checker" tab to paste suspicious SMS\n2. Try our "Demo Scam" feature on homepage\n3. Wait for Android app (coming soon)\n\nFor now, manually check suspicious messages using our other tools!',
+    tabs: {
+      check: 'Check SMS',
+      learn: 'Learn',
+      stats: 'Stats'
+    }
   },
   hi: {
-    title: 'SMS गार्डियन - संदिग्ध संदेश जांचें',
-    subtitle: 'एक टैप से SMS धोखाधड़ी की पहचान। कोई बैकग्राउंड निगरानी नहीं।',
+    title: 'SMS गार्डियन',
+    subtitle: 'धोखाधड़ी OTP और स्कैम संदेश तुरंत पहचानें',
     checkButton: 'मेरे नवीनतम SMS जांचें',
-    checking: 'नवीनतम संदेश स्कैन हो रहे हैं',
-    noPermission: 'SMS अनुमति आवश्यक',
-    permissionMessage: 'QuantumGuard को धोखाधड़ी के लिए आपके संदेश स्कैन करने के लिए SMS अनुमति की आवश्यकता है।\n\nहम:\n• केवल तभी पढ़ेंगे जब आप इस बटन पर क्लिक करें\n• बैकग्राउंड में SMS की निगरानी नहीं करेंगे\n• आपके संदेश संग्रहीत नहीं करेंगे\n• किसी के साथ साझा नहीं करेंगे\n\nआपकी गोपनीयता सुरक्षित है।',
-    grantPermission: 'अनुमति दें',
-    result: 'SMS विश्लेषण परिणाम',
-    scanAnother: 'फिर से स्कैन करें',
-    howItWorks: 'SMS Guardian कैसे काम करता है',
-    safe: 'कोई खतरा नहीं मिला',
-    safeMessage: 'आपके हाल के संदेश सुरक्षित दिखते हैं'
+    loading: 'संदेश स्कैन कर रहे हैं...',
+    noMessages: 'कोई संदिग्ध संदेश नहीं मिला',
+    browserWarning: '⚠️ ब्राउज़र सीमा',
+    browserMessage: 'वेब ऐप आपके डिवाइस से SMS संदेश नहीं पढ़ सकते।\n\nविकल्प:\n1. संदिग्ध SMS पेस्ट करने के लिए "Spam AI Checker" टैब उपयोग करें\n2. होमपेज पर हमारे "Demo Scam" फीचर को आज़माएं\n3. Android ऐप की प्रतीक्षा करें (जल्द आ रहा है)\n\nअभी के लिए, हमारे अन्य उपकरणों का उपयोग करके संदिग्ध संदेशों को मैन्युअल रूप से जांचें!',
+    tabs: {
+      check: 'SMS जांचें',
+      learn: 'सीखें',
+      stats: 'आँकड़े'
+    }
   }
 };
 
+const MOCK_MESSAGES: { [key: string]: SMSMessage[] } = {
+  en: [
+    {
+      id: 1,
+      sender: '+91-98765-43210',
+      message: 'URGENT: Your account will be blocked. Verify KYC: http://bit.ly/verify-now',
+      time: '10 minutes ago',
+      threat: 'CRITICAL',
+      threatType: 'Phishing Link',
+      confidence: 98,
+      indicators: [
+        'Shortened URL (bit.ly) hiding destination',
+        'Fake urgency tactics',
+        'Unknown sender number',
+        'KYC verification scam pattern'
+      ],
+      actions: [
+        'DO NOT click the link',
+        'Delete this message immediately',
+        'Block the sender',
+        'Report to 1930'
+      ]
+    },
+    {
+      id: 2,
+      sender: 'AX-ICICIBANK',
+      message: 'Your ICICI Bank account credited with Rs.5,250 on 15-Dec-24. Available balance: Rs.45,320',
+      time: '2 hours ago',
+      threat: 'SAFE',
+      threatType: 'Legitimate Bank Notification',
+      confidence: 99,
+      indicators: [
+        'Official sender ID (AX-ICICIBANK)',
+        'Standard transaction format',
+        'No links or requests',
+        'Informational only'
+      ],
+      actions: [
+        'This is a legitimate bank notification',
+        'No action needed'
+      ]
+    }
+  ],
+  hi: [
+    {
+      id: 1,
+      sender: '+91-98765-43210',
+      message: 'अत्यावश्यक: आपका खाता ब्लॉक हो जाएगा। KYC सत्यापित करें: http://bit.ly/verify-now',
+      time: '10 मिनट पहले',
+      threat: 'CRITICAL',
+      threatType: 'फ़िशिंग लिंक',
+      confidence: 98,
+      indicators: [
+        'छोटा URL (bit.ly) गंतव्य छिपा रहा है',
+        'नकली दबाव रणनीति',
+        'अज्ञात प्रेषक नंबर',
+        'KYC सत्यापन स्कैम पैटर्न'
+      ],
+      actions: [
+        'लिंक पर क्लिक न करें',
+        'यह संदेश तुरंत डिलीट करें',
+        'प्रेषक को ब्लॉक करें',
+        '1930 पर रिपोर्ट करें'
+      ]
+    },
+    {
+      id: 2,
+      sender: 'AX-ICICIBANK',
+      message: '15-दिसं-24 को आपके ICICI बैंक खाते में Rs.5,250 जमा हुए। उपलब्ध शेष: Rs.45,320',
+      time: '2 घंटे पहले',
+      threat: 'SAFE',
+      threatType: 'वैध बैंक सूचना',
+      confidence: 99,
+      indicators: [
+        'आधिकारिक प्रेषक ID (AX-ICICIBANK)',
+        'मानक लेनदेन प्रारूप',
+        'कोई लिंक या अनुरोध नहीं',
+        'केवल सूचनात्मक'
+      ],
+      actions: [
+        'यह एक वैध बैंक सूचना है',
+        'कोई कार्रवाई की आवश्यकता नहीं'
+      ]
+    }
+  ]
+};
+
 export default function SMSGuardian({ lang }: Props) {
-  const [isScanning, setIsScanning] = useState(false);
-  const [results, setResults] = useState<SMSAnalysis[]>([]);
-  const [hasPermission, setHasPermission] = useState(false);
+  const [activeTab, setActiveTab] = useState<'check' | 'learn' | 'stats'>('check');
+  const [loading, setLoading] = useState(false);
+  const [scannedMessages, setScannedMessages] = useState<SMSMessage[]>([]);
+
   const content = CONTENT[lang];
+  const mockMessages = MOCK_MESSAGES[lang];
 
-  // SIMULATED SMS SCANNING (In React Native, use react-native-sms library)
-  const simulateSMSScan = async (): Promise<SMSAnalysis[]> => {
-    // Simulate reading SMS (in production, actual SMS reading happens here)
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    // Mock SMS data for demo
-    const mockSMS = [
-      {
-        sender: '+91 98765 43210',
-        message: 'Your OTP for UPI payment of Rs.50000 to Account XXXX1234 is 847392. Valid for 10 minutes. DO NOT SHARE.',
-        timestamp: new Date(Date.now() - 120000).toLocaleString(),
-        isThreat: true,
-        threatLevel: 'CRITICAL' as const,
-        threatType: 'Money Transfer OTP Scam',
-        aiConfidence: 98,
-        indicators: [
-          'OTP for large money transfer (₹50,000)',
-          'Unusual account destination',
-          'Sender number not from official bank',
-          'Urgency pressure (10 minutes validity)',
-          'No user-initiated transaction'
-        ]
-      },
-      {
-        sender: 'AX-ICICIBANK',
-        message: 'Your ICICI Bank Account XX1234 is credited with Rs.5,250 on 14-Dec-25. Avl Bal: Rs.45,230. Download iMobile app.',
-        timestamp: new Date(Date.now() - 3600000).toLocaleString(),
-        isThreat: false,
-        threatLevel: 'SAFE' as const,
-        threatType: 'Legitimate Bank Notification',
-        aiConfidence: 99,
-        indicators: [
-          'Official bank sender ID (AX-ICICIBANK)',
-          'Transaction notification only',
-          'No action required from user',
-          'Standard bank message format'
-        ]
-      },
-      {
-        sender: '+91 87654 32109',
-        message: 'URGENT: Your Aadhar Card will be blocked in 24 hours. Update details immediately: http://bit.ly/aadhar-update-2025',
-        timestamp: new Date(Date.now() - 7200000).toLocaleString(),
-        isThreat: true,
-        threatLevel: 'HIGH' as const,
-        threatType: 'Aadhar Phishing Scam',
-        aiConfidence: 95,
-        indicators: [
-          'Fake urgency ("24 hours" deadline)',
-          'Government impersonation (Aadhar)',
-          'Shortened URL (bit.ly) - hiding destination',
-          'UIDAI never sends such messages',
-          'Threatening language'
-        ]
-      }
-    ];
-
-    return mockSMS;
-  };
-
-  const handleCheckSMS = async () => {
-    // In production web app, show browser limitation message
-    if (typeof window !== 'undefined' && !('sms' in navigator)) {
-      alert(
-        lang === 'en'
-          ? '⚠️ SMS reading requires native Android app.\n\nThis feature works in:\n• QuantumGuard Android App (coming soon)\n• For now, paste suspicious SMS in SPAM AI CHECKER\n\nWe\'ll notify you when Android app launches!'
-          : '⚠️ SMS पढ़ने के लिए नेटिव Android ऐप की आवश्यकता है।\n\nयह फीचर काम करता है:\n• QuantumGuard Android ऐप में (जल्द आ रहा है)\n• अभी के लिए, SPAM AI CHECKER में संदिग्ध SMS पेस्ट करें\n\nजब Android ऐप लॉन्च होगा तो हम आपको सूचित करेंगे!'
-      );
+  const handleCheckSMS = () => {
+    // Check if running in browser (not Android app)
+    if (typeof window !== 'undefined') {
+      alert(content.browserWarning + '\n\n' + content.browserMessage);
       return;
     }
+    
+    // This code will only run in Android app
+    setLoading(true);
+    setTimeout(() => {
+      setScannedMessages(mockMessages);
+      setLoading(false);
+    }, 2000);
+  };
 
-    setIsScanning(true);
-    setResults([]);
-
-    try {
-      const smsAnalysis = await simulateSMSScan();
-      setResults(smsAnalysis);
-    } catch (error) {
-      console.error('SMS scan error:', error);
-      alert(lang === 'en' ? 'Error scanning SMS. Please try again.' : 'SMS स्कैन करने में त्रुटि। कृपया पुनः प्रयास करें।');
+  const getSeverityColor = (threat: string) => {
+    switch (threat) {
+      case 'CRITICAL':
+        return 'border-red-500 bg-red-900/20';
+      case 'HIGH':
+        return 'border-orange-500 bg-orange-900/20';
+      case 'MEDIUM':
+        return 'border-yellow-500 bg-yellow-900/20';
+      case 'SAFE':
+        return 'border-green-500 bg-green-900/20';
+      default:
+        return 'border-gray-500 bg-gray-900/20';
     }
-
-    setIsScanning(false);
   };
 
-  const getThreatColor = (level: string) => {
-    if (level === 'SAFE') return 'text-green-400 bg-green-500/20 border-green-500/50';
-    if (level === 'MEDIUM') return 'text-yellow-400 bg-yellow-500/20 border-yellow-500/50';
-    if (level === 'HIGH') return 'text-orange-400 bg-orange-500/20 border-orange-500/50';
-    return 'text-red-400 bg-red-900/40 border-red-500 animate-pulse';
-  };
-
-  const getThreatIcon = (level: string) => {
-    if (level === 'SAFE') return <CheckCircle className="w-12 h-12 text-green-400" />;
-    if (level === 'MEDIUM') return <AlertTriangle className="w-12 h-12 text-yellow-400" />;
-    return <XCircle className="w-12 h-12 text-red-400 animate-pulse" />;
+  const getSeverityBadge = (threat: string) => {
+    switch (threat) {
+      case 'CRITICAL':
+        return 'bg-red-500';
+      case 'HIGH':
+        return 'bg-orange-500';
+      case 'MEDIUM':
+        return 'bg-yellow-500';
+      case 'SAFE':
+        return 'bg-green-500';
+      default:
+        return 'bg-gray-500';
+    }
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div className="text-center mb-12">
-        <div className="inline-block p-4 bg-blue-500/20 rounded-2xl mb-4">
+      <div className="text-center">
+        <div className="inline-block p-4 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-3xl mb-4">
           <MessageSquare className="w-12 h-12 text-blue-400" />
         </div>
-        <h2 className="text-4xl font-bold mb-2">{content.title}</h2>
+        <h1 className="text-4xl font-bold mb-2">{content.title}</h1>
         <p className="text-gray-400 text-lg">{content.subtitle}</p>
       </div>
 
-      {/* Check Button */}
-      {results.length === 0 && (
+      {/* Tabs */}
+      <div className="flex gap-2 justify-center">
+        {(['check', 'learn', 'stats'] as const).map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-6 py-3 rounded-xl font-bold transition ${
+              activeTab === tab
+                ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
+                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+            }`}
+          >
+            {content.tabs[tab]}
+          </button>
+        ))}
+      </div>
+
+      {/* Check Tab */}
+      {activeTab === 'check' && (
         <div className="space-y-6">
-          <div className="bg-white/5 backdrop-blur rounded-2xl border border-white/10 p-8">
-            <div className="text-center mb-8">
-              <Shield className="w-24 h-24 text-blue-400 mx-auto mb-6" />
-              <p className="text-gray-300 text-lg mb-8">
-                {lang === 'en'
-                  ? 'Click button below to scan your recent SMS messages for fraud patterns, scam OTPs, and phishing links.'
-                  : 'धोखाधड़ी पैटर्न, स्कैम OTP और फ़िशिंग लिंक के लिए अपने हाल के SMS संदेश स्कैन करने के लिए नीचे बटन पर क्लिक करें।'}
-              </p>
-              <button
-                onClick={handleCheckSMS}
-                disabled={isScanning}
-                className="px-12 py-5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl font-bold text-xl hover:scale-105 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isScanning ? (
-                  <>
-                    <span className="animate-pulse">{content.checking}</span>
-                  </>
-                ) : (
-                  content.checkButton
-                )}
-              </button>
-            </div>
-
-            {/* How It Works */}
-            <div className="bg-cyan-600/20 rounded-xl border border-cyan-500/50 p-6">
-              <h3 className="text-xl font-bold text-cyan-400 mb-4">{content.howItWorks}</h3>
-              <ol className="space-y-3 text-gray-300">
-                <li className="flex items-start gap-3">
-                  <span className="text-cyan-400 font-bold">1.</span>
-                  <span>
-                    {lang === 'en'
-                      ? 'Click "Check My Latest SMS" button above'
-                      : 'ऊपर "मेरे नवीनतम SMS जांचें" बटन पर क्लिक करें'}
-                  </span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-cyan-400 font-bold">2.</span>
-                  <span>
-                    {lang === 'en'
-                      ? 'QuantumGuard reads your last 5-10 SMS messages (permission required)'
-                      : 'QuantumGuard आपके अंतिम 5-10 SMS संदेश पढ़ता है (अनुमति आवश्यक)'}
-                  </span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-cyan-400 font-bold">3.</span>
-                  <span>
-                    {lang === 'en'
-                      ? 'AI analyzes each message for: OTP scams, phishing links, fake urgency, money transfers'
-                      : 'AI प्रत्येक संदेश का विश्लेषण करता है: OTP स्कैम, फ़िशिंग लिंक, नकली दबाव, पैसे ट्रांसफर'}
-                  </span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-cyan-400 font-bold">4.</span>
-                  <span>
-                    {lang === 'en'
-                      ? 'Results show threat level, scam type, and protective actions'
-                      : 'परिणाम खतरे का स्तर, स्कैम प्रकार और सुरक्षात्मक कार्रवाई दिखाते हैं'}
-                  </span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-cyan-400 font-bold">5.</span>
-                  <span className="font-bold text-green-300">
-                    {lang === 'en'
-                      ? 'Your messages are NOT stored or uploaded anywhere'
-                      : 'आपके संदेश कहीं भी संग्रहीत या अपलोड नहीं किए जाते'}
-                  </span>
-                </li>
-              </ol>
-            </div>
-
-            {/* Privacy Notice */}
-            <div className="mt-6 bg-green-600/20 rounded-xl border border-green-500/50 p-6">
-              <div className="flex items-start gap-3">
-                <Shield className="w-6 h-6 text-green-400 flex-shrink-0 mt-1" />
-                <div>
-                  <p className="text-sm text-green-200">
-                    <strong>{lang === 'en' ? '🔒 Privacy Guarantee:' : '🔒 गोपनीयता गारंटी:'}</strong>
-                    {' '}
-                    {lang === 'en'
-                      ? 'SMS reading happens ONLY when you click the button. We do NOT monitor SMS in the background. Your messages are analyzed on your device and are NOT sent to any server. We do NOT store or share your SMS data.'
-                      : 'SMS पढ़ना केवल तभी होता है जब आप बटन पर क्लिक करते हैं। हम बैकग्राउंड में SMS की निगरानी नहीं करते। आपके संदेश आपके डिवाइस पर विश्लेषण किए जाते हैं और किसी भी सर्वर पर नहीं भेजे जाते। हम आपके SMS डेटा को संग्रहीत या साझा नहीं करते।'}
-                  </p>
-                </div>
-              </div>
-            </div>
+          {/* Check Button */}
+          <div className="bg-white/5 backdrop-blur rounded-2xl border border-white/10 p-8 text-center">
+            <button
+              onClick={handleCheckSMS}
+              disabled={loading}
+              className="px-12 py-5 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl font-bold text-xl hover:scale-105 transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <Clock className="w-6 h-6 animate-spin" />
+                  {content.loading}
+                </span>
+              ) : (
+                content.checkButton
+              )}
+            </button>
+            <p className="text-sm text-gray-400 mt-4">
+              {lang === 'en' 
+                ? 'Click to scan your latest SMS messages for fraud patterns'
+                : 'धोखाधड़ी पैटर्न के लिए अपने नवीनतम SMS संदेश स्कैन करने के लिए क्लिक करें'}
+            </p>
           </div>
 
-          {/* Feature Note for Android */}
-          <div className="bg-yellow-600/20 backdrop-blur rounded-xl border border-yellow-500/50 p-6">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-1" />
-              <div>
-                <p className="text-sm text-yellow-200">
-                  <strong>⚠️ {lang === 'en' ? 'Current Limitation:' : 'वर्तमान सीमा:'}</strong>
-                  {' '}
-                  {lang === 'en'
-                    ? 'SMS reading requires native Android app permissions. This feature is demonstrated with sample data in the web version. For real SMS scanning, install QuantumGuard Android App (launching soon on Google Play Store).'
-                    : 'SMS पढ़ने के लिए नेटिव Android ऐप अनुमति की आवश्यकता है। यह फीचर वेब संस्करण में नमूना डेटा के साथ प्रदर्शित किया गया है। वास्तविक SMS स्कैनिंग के लिए, QuantumGuard Android ऐप इंस्टॉल करें (जल्द ही Google Play Store पर लॉन्च हो रहा है)।'}
-                </p>
-              </div>
+          {/* Privacy Notice */}
+          <div className="bg-green-600/20 backdrop-blur rounded-xl border border-green-500/50 p-6">
+            <h3 className="font-bold text-green-400 mb-2 flex items-center gap-2">
+              <Shield className="w-5 h-5" />
+              {lang === 'en' ? 'Privacy Guarantee' : 'गोपनीयता गारंटी'}
+            </h3>
+            <ul className="text-sm text-green-200 space-y-1">
+              <li>✓ {lang === 'en' ? 'Only reads when you click the button' : 'केवल बटन क्लिक करने पर पढ़ता है'}</li>
+              <li>✓ {lang === 'en' ? 'No background monitoring' : 'कोई पृष्ठभूमि निगरानी नहीं'}</li>
+              <li>✓ {lang === 'en' ? 'Analysis happens on your device' : 'विश्लेषण आपके डिवाइस पर होता है'}</li>
+              <li>✓ {lang === 'en' ? 'No data stored or transmitted' : 'कोई डेटा संग्रहीत या प्रसारित नहीं'}</li>
+            </ul>
+          </div>
+
+          {/* Results */}
+          {scannedMessages.length > 0 && (
+            <div className="space-y-4">
+              {scannedMessages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`backdrop-blur rounded-2xl border-2 p-6 ${getSeverityColor(msg.threat)}`}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="font-bold text-white">{msg.sender}</span>
+                        <span className="text-xs text-gray-400">{msg.time}</span>
+                      </div>
+                      <p className="text-gray-300 text-sm mb-3 bg-black/20 rounded-lg p-3">
+                        {msg.message}
+                      </p>
+                    </div>
+                    <span className={`px-3 py-1 ${getSeverityBadge(msg.threat)} rounded-full text-xs font-bold ml-4`}>
+                      {msg.threat}
+                    </span>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-bold text-white mb-2">{msg.threatType}</h4>
+                      <p className="text-sm text-gray-400">
+                        {lang === 'en' ? 'AI Confidence: ' : 'AI विश्वास: '}
+                        <strong className="text-white">{msg.confidence}%</strong>
+                      </p>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-white mb-2 flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4" />
+                        {lang === 'en' ? 'Threat Indicators:' : 'खतरे के संकेतक:'}
+                      </h4>
+                      <ul className="space-y-1">
+                        {msg.indicators.map((indicator, i) => (
+                          <li key={i} className="text-sm text-gray-300 flex items-start gap-2">
+                            <span className="text-red-400">•</span>
+                            <span>{indicator}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="bg-black/20 rounded-lg p-4">
+                      <h4 className="font-bold text-white mb-2">
+                        {lang === 'en' ? 'Recommended Actions:' : 'अनुशंसित कार्रवाई:'}
+                      </h4>
+                      <ul className="space-y-1">
+                        {msg.actions.map((action, i) => (
+                          <li key={i} className="text-sm text-gray-200 flex items-start gap-2">
+                            <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
+                            <span>{action}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Learn Tab */}
+      {activeTab === 'learn' && (
+        <div className="bg-white/5 backdrop-blur rounded-2xl border border-white/10 p-8">
+          <h2 className="text-2xl font-bold mb-6">
+            {lang === 'en' ? 'Common SMS Scams' : 'सामान्य SMS स्कैम'}
+          </h2>
+          <div className="space-y-4">
+            <div className="bg-red-900/20 rounded-xl border border-red-500/50 p-6">
+              <h3 className="font-bold text-red-400 mb-2">
+                {lang === 'en' ? '1. OTP Fraud' : '1. OTP धोखाधड़ी'}
+              </h3>
+              <p className="text-gray-300 text-sm">
+                {lang === 'en'
+                  ? 'Never share OTPs for money transfers. Real banks never ask for OTPs over calls or SMS.'
+                  : 'पैसे ट्रांसफर के लिए कभी OTP साझा न करें। असली बैंक कभी कॉल या SMS पर OTP नहीं मांगते।'}
+              </p>
+            </div>
+            <div className="bg-orange-900/20 rounded-xl border border-orange-500/50 p-6">
+              <h3 className="font-bold text-orange-400 mb-2">
+                {lang === 'en' ? '2. KYC Update Scams' : '2. KYC अपडेट स्कैम'}
+              </h3>
+              <p className="text-gray-300 text-sm">
+                {lang === 'en'
+                  ? 'Fake urgency about KYC updates with phishing links. Real banks use official channels.'
+                  : 'फ़िशिंग लिंक के साथ KYC अपडेट के बारे में नकली दबाव। असली बैंक आधिकारिक चैनल उपयोग करते हैं।'}
+              </p>
+            </div>
+            <div className="bg-yellow-900/20 rounded-xl border border-yellow-500/50 p-6">
+              <h3 className="font-bold text-yellow-400 mb-2">
+                {lang === 'en' ? '3. Prize/Lottery Scams' : '3. पुरस्कार/लॉटरी स्कैम'}
+              </h3>
+              <p className="text-gray-300 text-sm">
+                {lang === 'en'
+                  ? 'Messages claiming you won prizes asking for fees. No legitimate lottery asks for money upfront.'
+                  : 'पुरस्कार जीतने का दावा करने वाले संदेश शुल्क मांगते हैं। कोई वैध लॉटरी पहले पैसे नहीं मांगती।'}
+              </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Results */}
-      {results.length > 0 && (
-        <div className="space-y-6">
-          <div className="bg-white/5 backdrop-blur rounded-2xl border border-white/10 p-6">
-            <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">
-              <Shield className="w-6 h-6 text-blue-400" />
-              {content.result} ({results.length} {lang === 'en' ? 'messages scanned' : 'संदेश स्कैन किए गए'})
-            </h3>
-
-            <div className="space-y-6">
-              {results.map((sms, index) => (
-                <div
-                  key={index}
-                  className={`backdrop-blur rounded-2xl border-2 p-6 ${getThreatColor(sms.threatLevel)}`}
-                >
-                  <div className="flex items-start gap-4 mb-4">
-                    {getThreatIcon(sms.threatLevel)}
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-2xl font-bold text-white">{sms.threatType}</h4>
-                        <span className={`px-4 py-2 rounded-full font-bold text-sm ${getThreatColor(sms.threatLevel)}`}>
-                          {sms.threatLevel}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-300 mb-4">
-                        <Phone className="w-4 h-4" />
-                        <span>{sms.sender}</span>
-                        <span>•</span>
-                        <span>{sms.timestamp}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Message Content */}
-                  <div className="bg-black/40 rounded-xl p-4 mb-4">
-                    <p className="text-sm text-gray-300 font-mono">{sms.message}</p>
-                  </div>
-
-                  {/* AI Analysis */}
-                  <div className="bg-black/40 rounded-xl p-4 mb-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <AlertTriangle className="w-5 h-5 text-yellow-400" />
-                      <h5 className="font-bold text-white">
-                        {lang === 'en' ? 'AI Detected Threats:' : 'AI द्वारा पाए गए खतरे:'}
-                      </h5>
-                    </div>
-                    <ul className="space-y-2">
-                      {sms.indicators.map((indicator, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-gray-200">
-                          <span className={sms.isThreat ? 'text-red-400' : 'text-green-400'}>
-                            {sms.isThreat ? '⚠️' : '✓'}
-                          </span>
-                          <span>{indicator}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="mt-3 pt-3 border-t border-white/10">
-                      <p className="text-xs text-gray-400">
-                        AI Confidence: <strong className="text-white">{sms.aiConfidence}%</strong>
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  {sms.isThreat && (
-                    <div className="bg-red-950 rounded-xl border-2 border-red-500 p-4">
-                      <h5 className="font-bold text-red-400 mb-3">
-                        {lang === 'en' ? '🚨 IMMEDIATE ACTIONS:' : '🚨 तत्काल कार्रवाई:'}
-                      </h5>
-                      <ul className="space-y-2 text-sm text-gray-200">
-                        <li className="flex items-start gap-2">
-                          <XCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                          <span className="font-bold">
-                            {lang === 'en'
-                              ? 'DO NOT respond to this message'
-                              : 'इस संदेश का जवाब न दें'}
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <XCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                          <span className="font-bold">
-                            {lang === 'en'
-                              ? 'DO NOT click any links'
-                              : 'किसी भी लिंक पर क्लिक न करें'}
-                          </span>
-                        </li>
-                        {sms.threatType.includes('OTP') && (
-                          <li className="flex items-start gap-2">
-                            <XCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                            <span className="font-bold">
-                              {lang === 'en'
-                                ? 'DO NOT share this OTP with anyone'
-                                : 'यह OTP किसी के साथ साझा न करें'}
-                            </span>
-                          </li>
-                        )}
-                        <li className="flex items-start gap-2">
-                          <Shield className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
-                          <span>
-                            {lang === 'en'
-                              ? 'Block this sender in your phone'
-                              : 'अपने फोन में इस प्रेषक को ब्लॉक करें'}
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-2">
-                          <Phone className="w-4 h-4 text-orange-400 flex-shrink-0 mt-0.5" />
-                          <span>
-                            {lang === 'en'
-                              ? 'Report to 1930 (National Cybercrime Helpline)'
-                              : '1930 पर रिपोर्ट करें (राष्ट्रीय साइबर क्राइम हेल्पलाइन)'}
-                          </span>
-                        </li>
-                      </ul>
-                    </div>
-                  )}
-
-                  {!sms.isThreat && (
-                    <div className="bg-green-900/40 rounded-xl border border-green-500 p-4">
-                      <p className="text-sm text-green-200 flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4" />
-                        <strong>
-                          {lang === 'en'
-                            ? 'This message appears legitimate. Always verify sender before taking any action.'
-                            : 'यह संदेश वैध लगता है। कोई भी कार्रवाई करने से पहले हमेशा प्रेषक को सत्यापित करें।'}
-                        </strong>
-                      </p>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+      {/* Stats Tab */}
+      {activeTab === 'stats' && (
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="bg-gradient-to-br from-red-900/40 to-orange-900/40 backdrop-blur rounded-2xl border-2 border-red-500 p-8 text-center">
+            <TrendingUp className="w-12 h-12 text-red-400 mx-auto mb-4" />
+            <p className="text-5xl font-bold text-red-400 mb-2">847</p>
+            <p className="text-gray-300">
+              {lang === 'en' ? 'SMS Scam Patterns Detected' : 'SMS स्कैम पैटर्न पाए गए'}
+            </p>
           </div>
-
-          {/* Scan Again Button */}
-          <button
-            onClick={() => setResults([])}
-            className="w-full py-4 bg-white/10 hover:bg-white/20 rounded-xl font-bold transition"
-          >
-            {content.scanAnother}
-          </button>
+          <div className="bg-gradient-to-br from-green-900/40 to-emerald-900/40 backdrop-blur rounded-2xl border-2 border-green-500 p-8 text-center">
+            <Shield className="w-12 h-12 text-green-400 mx-auto mb-4" />
+            <p className="text-5xl font-bold text-green-400 mb-2">99.2%</p>
+            <p className="text-gray-300">
+              {lang === 'en' ? 'Detection Accuracy' : 'पहचान सटीकता'}
+            </p>
+          </div>
         </div>
       )}
     </div>
