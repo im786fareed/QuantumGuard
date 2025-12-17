@@ -1,7 +1,8 @@
 'use client';
 
-import { Shield, Scan, MessageSquare, Download, Link as LinkIcon, Database, TrendingUp, ArrowRight, PlayCircle, AlertTriangle, Users, Clock, GraduationCap, BookOpen, Video, Phone, XCircle, CheckCircle } from 'lucide-react';
+import { Shield, Scan, MessageSquare, Download, Link as LinkIcon, Database, TrendingUp, ArrowRight, PlayCircle, AlertTriangle, Users, Clock, GraduationCap, BookOpen, CheckCircle, XCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import DemoScamModal from './DemoScamModal';
 
 interface Props {
   onNavigate: (tab: string) => void;
@@ -15,8 +16,10 @@ const CONTENT = {
       protect: 'Protect'
     },
     hero: {
-      title: "India's First AI Anti-APK Shield",
-      subtitle: "Learn how scammers target you • Protect yourself instantly"
+      title: "Learn to Spot Scams - Free Education Platform",
+      subtitle: "Learn how scammers target you • Protect yourself instantly",
+      demoButton: "Try a Demo Scam",
+      demoSubtext: "See how QuantumGuard detects scams in 30 seconds"
     },
     learn: {
       videos: {
@@ -50,8 +53,10 @@ const CONTENT = {
       protect: 'सुरक्षा'
     },
     hero: {
-      title: 'भारत की पहली AI एंटी-APK शील्ड',
-      subtitle: 'जानें स्कैमर कैसे निशाना बनाते हैं • तुरंत अपनी रक्षा करें'
+      title: "स्कैम पहचानना सीखें - मुफ्त शिक्षा मंच",
+      subtitle: "जानें स्कैमर कैसे निशाना बनाते हैं • तुरंत अपनी रक्षा करें",
+      demoButton: "डेमो स्कैम आज़माएं",
+      demoSubtext: "30 सेकंड में देखें QuantumGuard कैसे स्कैम पहचानता है"
     },
     learn: {
       videos: {
@@ -276,6 +281,7 @@ const FEATURE_CARDS = {
 
 export default function HomePage({ onNavigate, lang }: Props) {
   const [activeTab, setActiveTab] = useState<'learn' | 'protect'>('learn');
+  const [showDemo, setShowDemo] = useState(false);
   const [stats] = useState({
     threatsBlocked: 2847391,
     usersProtected: 124583,
@@ -292,7 +298,7 @@ export default function HomePage({ onNavigate, lang }: Props) {
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       {/* COMPACT HERO */}
-      <section className="text-center space-y-4 py-6">
+      <section className="text-center space-y-6 py-6">
         <div className="inline-block p-3 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-3xl">
           <Shield className="w-12 h-12 text-cyan-400" />
         </div>
@@ -300,6 +306,18 @@ export default function HomePage({ onNavigate, lang }: Props) {
           {content.hero.title}
         </h1>
         <p className="text-lg text-gray-300">{content.hero.subtitle}</p>
+        
+        {/* Try Demo Button */}
+        <button
+          onClick={() => setShowDemo(true)}
+          className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl font-bold text-lg hover:scale-105 transition shadow-lg shadow-green-500/50"
+        >
+          <PlayCircle className="w-6 h-6" />
+          {content.hero.demoButton}
+        </button>
+        <p className="text-sm text-gray-400">
+          👆 {content.hero.demoSubtext}
+        </p>
       </section>
 
       {/* TWO TABS */}
@@ -559,6 +577,14 @@ export default function HomePage({ onNavigate, lang }: Props) {
           </div>
         </div>
       )}
+
+      {/* Demo Modal */}
+      <DemoScamModal
+        isOpen={showDemo}
+        onClose={() => setShowDemo(false)}
+        onNavigate={onNavigate}
+        lang={lang}
+      />
     </div>
   );
 }

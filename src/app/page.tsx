@@ -1,7 +1,8 @@
 'use client';
 
-import { Scan, Link, MessageSquare, FileSearch, Smartphone, TrendingUp, GraduationCap, Brain, Menu, X, Globe, Shield, Lock, Database, AlertTriangle, Download, Home as HomeIcon } from 'lucide-react';
+import { Scan, Link as LinkIcon, MessageSquare, FileSearch, Smartphone, TrendingUp, GraduationCap, Brain, Menu, X, Globe, Shield, Lock, Database, AlertTriangle, Download, Home as HomeIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import HomePage from '@/components/HomePage';
 import Scanner from '@/components/Scanner';
 import UrlChecker from '@/components/UrlChecker';
@@ -24,13 +25,13 @@ type TabId = 'home' | 'scanner' | 'apk' | 'url' | 'spam' | 'file' | 'encryption'
 
 const NAV_ITEMS = {
   en: [
-    { id: 'home', label: 'Home', icon: Home },
+    { id: 'home', label: 'Home', icon: HomeIcon },
     { id: 'scanner', label: 'AI Scanner', icon: Scan },
     { id: 'threats', label: 'Threat Intel', icon: TrendingUp },
     { id: 'apk', label: 'APK Guardian', icon: Shield },
     { id: 'sms', label: 'SMS Guardian', icon: MessageSquare },
     { id: 'downloads', label: 'Download Scanner', icon: Download },
-    { id: 'url', label: 'URL Check', icon: Link },
+    { id: 'url', label: 'URL Check', icon: LinkIcon },
     { id: 'spam', label: 'Spam AI', icon: MessageSquare },
     { id: 'file', label: 'File Scan', icon: FileSearch },
     { id: 'encryption', label: 'File Encryption', icon: Lock },
@@ -42,13 +43,13 @@ const NAV_ITEMS = {
     { id: 'aboutai', label: 'AI Tech', icon: Brain }
   ],
   hi: [
-    { id: 'home', label: 'होम', icon: HomeIcon  },
+    { id: 'home', label: 'होम', icon: HomeIcon },
     { id: 'scanner', label: 'AI स्कैनर', icon: Scan },
     { id: 'threats', label: 'खतरा इंटेल', icon: TrendingUp },
     { id: 'apk', label: 'APK गार्डियन', icon: Shield },
     { id: 'sms', label: 'SMS गार्डियन', icon: MessageSquare },
     { id: 'downloads', label: 'डाउनलोड स्कैनर', icon: Download },
-    { id: 'url', label: 'URL जांच', icon: Link },
+    { id: 'url', label: 'URL जांच', icon: LinkIcon },
     { id: 'spam', label: 'स्पैम AI', icon: MessageSquare },
     { id: 'file', label: 'फ़ाइल स्कैन', icon: FileSearch },
     { id: 'encryption', label: 'फ़ाइल एन्क्रिप्शन', icon: Lock },
@@ -65,12 +66,10 @@ const CONTENT = {
   en: {
     title: 'QuantumGuard',
     subtitle: 'AI-Powered Cyber Fraud Prevention',
-    disclaimer: 'AI-powered autonomous threat detection. Auto-updates from latest cyber news. Assisted SMS/Download scanning.',
   },
   hi: {
     title: 'QuantumGuard',
     subtitle: 'AI संचालित साइबर धोखाधड़ी रोकथाम',
-    disclaimer: 'AI संचालित स्वायत्त खतरा पहचान। नवीनतम साइबर समाचार से स्वतः अपडेट। सहायता प्राप्त SMS/डाउनलोड स्कैनिंग।',
   }
 };
 
@@ -103,7 +102,6 @@ export default function Home() {
   const handleNavigate = (tab: string) => {
     setActiveTab(tab as TabId);
     setShowMenu(false);
-    // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -254,15 +252,128 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-white/10 mt-16">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="bg-green-600/20 backdrop-blur rounded-xl border border-green-500/50 p-4 mb-4">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            {/* About */}
+            <div>
+              <h3 className="font-bold text-white mb-3">About</h3>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li>
+                  <Link href="/about" className="hover:text-cyan-400 transition">
+                    About Us
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/privacy" className="hover:text-cyan-400 transition">
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <a 
+                    href="https://github.com/im786fareed/QuantumGuard" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="hover:text-cyan-400 transition"
+                  >
+                    Open Source Code
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Resources */}
+            <div>
+              <h3 className="font-bold text-white mb-3">Resources</h3>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li>
+                  <button onClick={() => handleNavigate('education')} className="hover:text-cyan-400 transition">
+                    Safety Videos
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => handleNavigate('news')} className="hover:text-cyan-400 transition">
+                    Latest Threats
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => handleNavigate('threats')} className="hover:text-cyan-400 transition">
+                    Threat Intelligence
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Tools */}
+            <div>
+              <h3 className="font-bold text-white mb-3">Protection Tools</h3>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li>
+                  <button onClick={() => handleNavigate('apk')} className="hover:text-cyan-400 transition">
+                    APK Guardian
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => handleNavigate('sms')} className="hover:text-cyan-400 transition">
+                    SMS Guardian
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => handleNavigate('url')} className="hover:text-cyan-400 transition">
+                    URL Checker
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Contact */}
+            <div>
+              <h3 className="font-bold text-white mb-3">Contact & Report</h3>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li>
+                  <a href="mailto:quantumguard.india@gmail.com" className="hover:text-cyan-400 transition">
+                    quantumguard.india@gmail.com
+                  </a>
+                </li>
+                <li>
+                  <a href="tel:1930" className="hover:text-cyan-400 transition">
+                    Report Scams: 1930
+                  </a>
+                </li>
+                <li>
+                  <a 
+                    href="https://cybercrime.gov.in" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="hover:text-cyan-400 transition"
+                  >
+                    Cybercrime.gov.in
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Trust Notice */}
+          <div className="bg-green-600/20 backdrop-blur rounded-xl border border-green-500/50 p-4 mb-6">
             <p className="text-sm text-green-200 text-center">
-              <span className="font-bold">✅ V2.0 - Autonomous Protection Live!</span> {content.disclaimer}
+              <span className="font-bold">🔒 Privacy Guarantee:</span> We don't store your data. All analysis happens in your browser. 
+              <Link href="/privacy" className="underline ml-1 hover:text-green-400">Read Privacy Policy</Link>
             </p>
           </div>
-          <p className="text-center text-gray-400 text-sm">
-            © 2024 QuantumGuard. {language === 'en' ? 'Protecting India from cyber threats 24/7.' : 'साइबर खतरों से भारत की रक्षा 24/7।'}
-          </p>
+
+          {/* Disclaimer */}
+          <div className="bg-yellow-600/20 backdrop-blur rounded-xl border border-yellow-500/50 p-4 mb-6">
+            <p className="text-sm text-yellow-200 text-center">
+              <span className="font-bold">⚠️ Important:</span> QuantumGuard is an educational tool, not a replacement for antivirus software. 
+              Always report scams to official authorities at <strong>1930</strong> or <strong>cybercrime.gov.in</strong>
+            </p>
+          </div>
+
+          {/* Copyright */}
+          <div className="text-center text-gray-400 text-sm border-t border-white/10 pt-6">
+            <p>© 2024 QuantumGuard. {language === 'en' ? 'Free educational platform.' : 'मुफ्त शैक्षिक मंच।'}</p>
+            <p className="mt-2">Not affiliated with any government agency. Built with ❤️ for India.</p>
+          </div>
         </div>
       </footer>
     </div>
