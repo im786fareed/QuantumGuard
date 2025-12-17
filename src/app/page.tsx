@@ -1,5 +1,5 @@
 'use client';
-
+import InstallPrompt from '@/components/InstallPrompt';
 import { Scan, Link as LinkIcon, MessageSquare, FileSearch, Smartphone, TrendingUp, GraduationCap, Brain, Menu, X, Globe, Shield, Lock, Database, AlertTriangle, Download, Home as HomeIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -163,10 +163,12 @@ export default function Home() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black text-white">
-      {/* Header */}
-      <header className="border-b border-white/10 backdrop-blur sticky top-0 z-50">
+return (
+  <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black text-white">
+    <InstallPrompt />
+    
+    {/* Header */}
+    <header className="border-b border-white/10 backdrop-blur sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <button
