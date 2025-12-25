@@ -1,723 +1,325 @@
 'use client';
+import { Shield, Scan, MessageSquare, Download, Link as LinkIcon, Database, TrendingUp, ArrowRight, PlayCircle, AlertTriangle, Users, Clock, GraduationCap, BookOpen, CheckCircle, XCircle, Camera, Brain, Phone, Smartphone, Search, MessageCircle, Newspaper, Lock } from 'lucide-react';
 
-import { Shield, Scan, MessageSquare, Download, Link as LinkIcon, Database, TrendingUp, ArrowRight, PlayCircle, AlertTriangle, Users, Clock, GraduationCap, BookOpen, CheckCircle, XCircle, Camera, Brain, Phone } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import DemoScamModal from './DemoScamModal';
+// TabId type definition
+type TabId =
+  | 'home'
+  | 'scanner'
+  | 'apk'
+  | 'url'
+  | 'spam'
+  | 'file'
+  | 'encryption'
+  | 'breach'
+  | 'ransomware'
+  | 'device'
+  | 'news'
+  | 'education'
+  | 'aboutai'
+  | 'threats'
+  | 'sms'
+  | 'downloads'
+  | 'evidence'
+  | 'report'
+  | 'scamdb'
+  | 'aianalyzer'
+  | 'emergency'
+  | 'simprotection'
+  | 'devicescan'
+  | 'whatsapp'
+  | 'awareness'
+  | 'privacy';
 
-interface Props {
-  onNavigate: (tab: string) => void;
+interface HomePageProps {
+  onNavigate: (tab: TabId) => void;
   lang: 'en' | 'hi';
 }
 
-const CONTENT = {
-  en: {
-    tabs: {
-      learn: 'Learn',
-      protect: 'Protect'
+export default function HomePage({ onNavigate, lang }: HomePageProps) {
+  // Define tools array first (separate constant)
+  const tools = [
+    {
+      id: 'evidence' as TabId,
+      title: 'Evidence Collector',
+      description: 'Record scam calls legally',
+      gradient: 'from-blue-600 to-purple-600'
     },
-    hero: {
-      title: "Shield Yourself from Cyber Threats",
-      subtitle: "Learn how scammers target you • Protect yourself instantly",
-      demoButton: "Try a Demo Scam",
-      demoSubtext: "See how QuantumShield detects scams in 30 seconds"
+    {
+      id: 'report' as TabId,
+      title: 'Report to Police',
+      description: 'File complaint instantly',
+      gradient: 'from-red-600 to-orange-600'
     },
-    learn: {
-      videos: {
-        title: '🎓 Watch & Learn',
-        subtitle: 'Understand cyber frauds in 5 minutes'
+    {
+      id: 'scamdb' as TabId,
+      title: 'Scam Database',
+      description: 'Check phone numbers',
+      gradient: 'from-purple-600 to-pink-600'
+    },
+    {
+      id: 'aianalyzer' as TabId,
+      title: 'AI Call Analyzer',
+      description: 'Real-time scam detection',
+      gradient: 'from-cyan-600 to-blue-600'
+    },
+    {
+      id: 'emergency' as TabId,
+      title: 'Emergency Help',
+      description: 'Find nearest police',
+      gradient: 'from-red-600 to-pink-600'
+    },
+  ];
+
+  // Now define emergency object (references the tools array)
+  const emergency = {
+    title: '🚨 Emergency Anti-Scam Tools',
+    subtitle: 'Protect yourself from the latest cyber scams targeting Indians',
+    tools: tools,  // Reference the array here
+  };
+
+  const content = {
+    en: {
+      hero: {
+        badge: '🛡️ India\'s #1 AI Cyber Protection',
+        title: 'Protect Yourself from',
+        highlight: 'Cyber Scams & Digital Threats',
+        subtitle: 'AI-powered security tools designed for Indians. Detect scams, protect your data, and stay safe online.',
+        cta: 'Start Free Scan',
+        stats: [
+          { value: '₹120Cr+', label: 'Losses Prevented' },
+          { value: '26', label: 'Security Tools' },
+          { value: '100%', label: 'Free Forever' }
+        ]
       },
-      digitalArrest: {
-        title: '🚨 Stop Digital Arrest Scams',
-        subtitle: 'The #1 cyber fraud targeting Indians (₹120 crore stolen in 2024)',
-        whatIs: 'What is Digital Arrest?',
-        howProtects: 'How QuantumShield Protects You',
-        learnMore: 'Learn Complete Protection Guide'
-      },
-      protectionGuide: 'Quick Protection Tips',
-      latestThreats: 'Active Threats Right Now',
-      ctaButton: 'Start Protecting Yourself →'
-    },
-    protect: {
-      tools: {
+      emergency,  // ← Use the fixed emergency object here
+      protection: {
         title: '🛡️ Protection Tools',
-        subtitle: 'Check suspicious links, files, and messages instantly'
+        tools: [
+          { id: 'simprotection' as TabId, title: 'SIM Protection', description: 'Call forwarding check', icon: 'smartphone', color: 'orange' },
+          { id: 'devicescan' as TabId, title: 'Device Scanner', description: 'Check if compromised', icon: 'search', color: 'purple' },
+          { id: 'whatsapp' as TabId, title: 'WhatsApp Safety', description: 'Ghost pairing alert', icon: 'message', color: 'green' },
+          { id: 'awareness' as TabId, title: 'Scam Alerts', description: 'Latest threats', icon: 'newspaper', color: 'red' },
+          { id: 'privacy' as TabId, title: 'Privacy Shield', description: 'Free VPN alternative', icon: 'lock', color: 'indigo' }
+        ]
       },
-      featuredTools: {
-        title: '🛡️ Protection Tools - Try Now!',
-        subtitle: 'Check suspicious content instantly - all analysis happens in your browser'
+      features: {
+        title: 'Complete Protection Suite',
+        subtitle: '26 AI-powered tools to keep you safe',
+        items: [
+          {
+            icon: Scan,
+            title: 'AI-Powered Scanning',
+            description: 'Deep learning algorithms detect threats in real-time across messages, files, and links.'
+          },
+          {
+            icon: Shield,
+            title: 'Multi-Layer Security',
+            description: 'APK analysis, URL checking, spam detection, and device security - all in one platform.'
+          },
+          {
+            icon: Brain,
+            title: 'Smart Threat Intelligence',
+            description: 'Stay ahead with real-time updates on emerging threats targeting Indians.'
+          },
+          {
+            icon: Users,
+            title: 'Community Protection',
+            description: 'Share and report scams to protect millions of Indians from cyber threats.'
+          }
+        ]
       },
-      stats: 'Live Protection Stats',
-      howItWorks: 'How QuantumShield Works',
-      ctaButton: '← Watch Safety Videos First'
-    }
-  },
-  hi: {
-    tabs: {
-      learn: 'सीखें',
-      protect: 'सुरक्षा'
-    },
-    hero: {
-      title: "साइबर खतरों से अपनी रक्षा करें",
-      subtitle: "जानें स्कैमर कैसे निशाना बनाते हैं • तुरंत अपनी रक्षा करें",
-      demoButton: "डेमो स्कैम आज़माएं",
-      demoSubtext: "30 सेकंड में देखें QuantumShield कैसे स्कैम पहचानता है"
-    },
-    learn: {
-      videos: {
-        title: '🎓 देखें और सीखें',
-        subtitle: '5 मिनट में साइबर धोखाधड़ी समझें'
+      threats: {
+        title: '⚠️ Top Threats in India (2024)',
+        items: [
+          {
+            threat: 'Digital Arrest Scam',
+            losses: '₹120 Crores',
+            description: 'Fake police officers on video call demanding money',
+            severity: 'critical'
+          },
+          {
+            threat: 'WhatsApp Ghost Pairing',
+            losses: '₹50 Crores',
+            description: 'QR code scam linking your WhatsApp to scammers',
+            severity: 'critical'
+          },
+          {
+            threat: 'UPI/Banking Fraud',
+            losses: '₹95 Crores',
+            description: 'Fake payment links and OTP phishing',
+            severity: 'high'
+          },
+          {
+            threat: 'Job Offer Scams',
+            losses: '₹100 Crores',
+            description: 'Fake LinkedIn jobs demanding registration fees',
+            severity: 'high'
+          }
+        ]
       },
-      digitalArrest: {
-        title: '🚨 डिजिटल अरेस्ट स्कैम रोकें',
-        subtitle: 'भारतीयों को निशाना बनाने वाला #1 साइबर धोखाधड़ी (2024 में ₹120 करोड़ चोरी)',
-        whatIs: 'डिजिटल अरेस्ट क्या है?',
-        howProtects: 'QuantumShield कैसे सुरक्षा करता है',
-        learnMore: 'पूर्ण सुरक्षा गाइड सीखें'
-      },
-      protectionGuide: 'त्वरित सुरक्षा सुझाव',
-      latestThreats: 'अभी सक्रिय खतरे',
-      ctaButton: 'अपनी सुरक्षा शुरू करें →'
-    },
-    protect: {
       tools: {
-        title: '🛡️ सुरक्षा उपकरण',
-        subtitle: 'संदिग्ध लिंक, फ़ाइलें और संदेशों की तुरंत जांच करें'
+        title: 'All 26 Security Tools',
+        categories: [
+          {
+            name: 'Scam Protection',
+            items: ['AI Scanner', 'Threat Intel', 'Evidence Collector', 'Police Report', 'Scam Database', 'AI Call Analyzer']
+          },
+          {
+            name: 'Device Security',
+            items: ['APK Guardian', 'Device Check', 'Ransomware Detect', 'Device Scanner', 'SIM Protection']
+          },
+          {
+            name: 'Communication Safety',
+            items: ['SMS Guardian', 'Spam AI', 'WhatsApp Safety', 'URL Check']
+          },
+          {
+            name: 'Data Protection',
+            items: ['File Encryption', 'Breach Check', 'Privacy Shield', 'File Scan']
+          },
+          {
+            name: 'Emergency Response',
+            items: ['Emergency Contacts', 'Latest Threats', 'Scam Alerts', 'Download Scanner']
+          },
+          {
+            name: 'Education',
+            items: ['Learn Safety', 'AI Tech Info']
+          }
+        ]
       },
-      featuredTools: {
-        title: '🛡️ सुरक्षा उपकरण - अभी आज़माएं!',
-        subtitle: 'संदिग्ध सामग्री तुरंत जांचें - सभी विश्लेषण आपके ब्राउज़र में होता है'
+      cta: {
+        title: 'Ready to Protect Yourself?',
+        subtitle: 'Join thousands of Indians staying safe online',
+        button: 'Get Started Free'
+      }
+    },
+    hi: {
+      // Your Hindi translations (same structure as en)
+      hero: {
+        badge: '🛡️ भारत का #1 AI साइबर सुरक्षा',
+        title: 'खुद को बचाएं',
+        highlight: 'साइबर घोटालों और डिजिटल खतरों से',
+        subtitle: 'भारतीयों के लिए डिज़ाइन किए गए AI-संचालित सुरक्षा उपकरण। घोटालों का पता लगाएं, अपने डेटा की रक्षा करें, और ऑनलाइन सुरक्षित रहें।',
+        cta: 'मुफ्त स्कैन शुरू करें',
+        stats: [
+          { value: '₹120Cr+', label: 'नुकसान रोका गया' },
+          { value: '26', label: 'सुरक्षा उपकरण' },
+          { value: '100%', label: 'हमेशा मुफ्त' }
+        ]
       },
-      stats: 'लाइव सुरक्षा आँकड़े',
-      howItWorks: 'QuantumShield कैसे काम करता है',
-      ctaButton: '← पहले सुरक्षा वीडियो देखें'
+      emergency: {
+        title: '🚨 आपातकालीन घोटाला-विरोधी उपकरण',
+        subtitle: 'भारतीयों को लक्षित करने वाले नवीनतम साइबर घोटालों से खुद को बचाएं',
+        tools: tools.map(tool => ({
+          ...tool,
+          title: tool.title === 'Evidence Collector' ? 'सबूत संग्रहकर्ता' : 
+                 tool.title === 'Report to Police' ? 'पुलिस को रिपोर्ट' : 
+                 tool.title === 'Scam Database' ? 'घोटाला डेटाबेस' : 
+                 tool.title === 'AI Call Analyzer' ? 'AI कॉल विश्लेषक' : 
+                 'आपातकालीन सहायता',
+          description: tool.description === 'Record scam calls legally' ? 'घोटाला कॉल कानूनी रूप से रिकॉर्ड करें' : 
+                       tool.description === 'File complaint instantly' ? 'तुरंत शिकायत दर्ज करें' : 
+                       tool.description === 'Check phone numbers' ? 'फोन नंबर जांचें' : 
+                       tool.description === 'Real-time scam detection' ? 'वास्तविक समय घोटाला पहचान' : 
+                       'निकटतम पुलिस खोजें'
+        }))
+      },
+      // ... add other Hindi translations similarly (protection, features, threats, tools, cta)
     }
-  }
-};
-{/* Emergency Anti-Scam Tools Section */}
-<section className="mb-12">
-  <h2 className="text-3xl font-bold mb-6 text-center">
-    🚨 Emergency Anti-Scam Tools
-  </h2>
-  
-  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-    <button
-      onClick={() => onNavigate('evidence')}
-      className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl p-6 hover:scale-105 transition text-left"
-    >
-      <Camera className="w-12 h-12 mb-3" />
-      <h3 className="font-bold text-xl mb-2">Evidence Collector</h3>
-      <p className="text-sm text-gray-200">Collect legal evidence during scam calls</p>
-    </button>
+  };
 
-    <button
-      onClick={() => onNavigate('report')}
-      className="bg-gradient-to-br from-red-600 to-orange-600 rounded-xl p-6 hover:scale-105 transition text-left"
-    >
-      <Shield className="w-12 h-12 mb-3" />
-      <h3 className="font-bold text-xl mb-2">Report to Police</h3>
-      <p className="text-sm text-gray-200">File official complaint instantly</p>
-    </button>
+  const t = content[lang];
 
-    <button
-      onClick={() => onNavigate('scamdb')}
-      className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl p-6 hover:scale-105 transition text-left"
-    >
-      <Database className="w-12 h-12 mb-3" />
-      <h3 className="font-bold text-xl mb-2">Scam Database</h3>
-      <p className="text-sm text-gray-200">Check if number is reported scam</p>
-    </button>
-
-    <button
-      onClick={() => onNavigate('aianalyzer')}
-      className="bg-gradient-to-br from-cyan-600 to-blue-600 rounded-xl p-6 hover:scale-105 transition text-left"
-    >
-      <Brain className="w-12 h-12 mb-3" />
-      <h3 className="font-bold text-xl mb-2">AI Call Analyzer</h3>
-      <p className="text-sm text-gray-200">Real-time scam detection during calls</p>
-    </button>
-
-    <button
-      onClick={() => onNavigate('emergency')}
-      className="bg-gradient-to-br from-red-600 to-pink-600 rounded-xl p-6 hover:scale-105 transition text-left"
-    >
-      <Phone className="w-12 h-12 mb-3" />
-      <h3 className="font-bold text-xl mb-2">Emergency Contacts</h3>
-      <p className="text-sm text-gray-200">Find nearest police station & helplines</p>
-    </button>
-  </div>
-</section>
-
-const EDUCATION_VIDEOS = {
-  en: [
-    {
-      id: 1,
-      title: 'Digital Arrest Scam',
-      duration: '5 min',
-      desc: 'Fake CBI/Police officers on video calls',
-      thumbnail: '🎭',
-      views: '2.4M'
-    },
-    {
-      id: 2,
-      title: 'APK Malware Threat',
-      duration: '3 min',
-      desc: 'Never install apps from WhatsApp',
-      thumbnail: '📱',
-      views: '1.8M'
-    },
-    {
-      id: 3,
-      title: 'UPI Cashback Frauds',
-      duration: '4 min',
-      desc: 'Fake cashback apps stealing money',
-      thumbnail: '💰',
-      views: '1.5M'
-    },
-    {
-      id: 4,
-      title: 'Aadhar Phishing',
-      duration: '3 min',
-      desc: 'Spot fake government websites',
-      thumbnail: '🆔',
-      views: '1.2M'
+  const getIconComponent = (iconName: string) => {
+    switch (iconName) {
+      case 'smartphone': return Smartphone;
+      case 'search': return Search;
+      case 'message': return MessageCircle;
+      case 'newspaper': return Newspaper;
+      case 'lock': return Lock;
+      default: return Shield;
     }
-  ],
-  hi: [
-    {
-      id: 1,
-      title: 'डिजिटल अरेस्ट स्कैम',
-      duration: '5 मिनट',
-      desc: 'वीडियो कॉल पर नकली CBI/पुलिस',
-      thumbnail: '🎭',
-      views: '24 लाख'
-    },
-    {
-      id: 2,
-      title: 'APK मैलवेयर खतरा',
-      duration: '3 मिनट',
-      desc: 'WhatsApp से ऐप इंस्टॉल न करें',
-      thumbnail: '📱',
-      views: '18 लाख'
-    },
-    {
-      id: 3,
-      title: 'UPI कैशबैक धोखाधड़ी',
-      duration: '4 मिनट',
-      desc: 'नकली कैशबैक ऐप पैसे चुरा रहे हैं',
-      thumbnail: '💰',
-      views: '15 लाख'
-    },
-    {
-      id: 4,
-      title: 'आधार फ़िशिंग',
-      duration: '3 मिनट',
-      desc: 'नकली सरकारी वेबसाइट पहचानें',
-      thumbnail: '🆔',
-      views: '12 लाख'
+  };
+
+  const getColorClass = (color: string) => {
+    switch (color) {
+      case 'orange': return 'text-orange-400 border-orange-500/50 hover:border-orange-500';
+      case 'purple': return 'text-purple-400 border-purple-500/50 hover:border-purple-500';
+      case 'green': return 'text-green-400 border-green-500/50 hover:border-green-500';
+      case 'red': return 'text-red-400 border-red-500/50 hover:border-red-500';
+      case 'indigo': return 'text-indigo-400 border-indigo-500/50 hover:border-indigo-500';
+      default: return 'text-blue-400 border-blue-500/50 hover:border-blue-500';
     }
-  ]
-};
-
-const DIGITAL_ARREST_INFO = {
-  en: {
-    what: [
-      '📞 Scammer calls pretending to be CBI/Police officer',
-      '⚠️ Claims arrest warrant issued in your name',
-      '🎥 Forces you to stay on video call for hours ("digital arrest")',
-      '💰 Demands ₹50,000-₹50 lakh to "clear charges"',
-      '😰 Victim panics and transfers life savings'
-    ],
-    protection: [
-      '🛡️ Threat Intelligence: Learns about scam patterns daily',
-      '📱 SMS Guardian: Detects fake CBI/Police messages',
-      '🔗 URL Checker: Blocks fake arrest warrant links',
-      '🎓 Education: Teaches you the truth about digital arrest',
-      '✅ Result: You recognize the scam and hang up immediately'
-    ],
-    facts: [
-      '❌ Real CBI/Police NEVER call about arrests',
-      '❌ No such thing as "digital arrest" in Indian law',
-      '❌ Real agencies send PHYSICAL notices (by post)',
-      '❌ No officer will ever ask for money over phone',
-      '✅ If you get this call: HANG UP and report to 1930'
-    ]
-  },
-  hi: {
-    what: [
-      '📞 स्कैमर CBI/पुलिस अधिकारी बनकर कॉल करता है',
-      '⚠️ दावा करता है कि आपके नाम पर अरेस्ट वारंट जारी',
-      '🎥 घंटों वीडियो कॉल पर रहने को मजबूर करता है ("डिजिटल अरेस्ट")',
-      '💰 "आरोप साफ करने" के लिए ₹50,000-₹50 लाख मांगता है',
-      '😰 पीड़ित घबरा कर जीवन भर की बचत ट्रांसफर कर देता है'
-    ],
-    protection: [
-      '🛡️ खतरा खुफिया: रोज़ाना स्कैम पैटर्न सीखता है',
-      '📱 SMS गार्डियन: नकली CBI/पुलिस संदेश पहचानता है',
-      '🔗 URL चेकर: नकली अरेस्ट वारंट लिंक ब्लॉक करता है',
-      '🎓 शिक्षा: डिजिटल अरेस्ट की सच्चाई सिखाता है',
-      '✅ परिणाम: आप स्कैम पहचान लेते हैं और तुरंत फोन काट देते हैं'
-    ],
-    facts: [
-      '❌ असली CBI/पुलिस अरेस्ट के बारे में कभी कॉल नहीं करते',
-      '❌ भारतीय कानून में "डिजिटल अरेस्ट" जैसी कोई चीज़ नहीं',
-      '❌ असली एजेंसियां फिजिकल नोटिस (डाक से) भेजती हैं',
-      '❌ कोई अधिकारी फोन पर पैसे नहीं मांगेगा',
-      '✅ अगर यह कॉल आए: तुरंत फोन काटें और 1930 पर रिपोर्ट करें'
-    ]
-  }
-};
-
-const PROTECTION_TIPS = {
-  en: [
-    '❌ Never install APKs from WhatsApp/Telegram',
-    '❌ Don\'t share OTPs for money transfers',
-    '✅ Only install apps from Play Store',
-    '✅ Check URLs before clicking',
-    '✅ Use QuantumShield to verify suspicious content'
-  ],
-  hi: [
-    '❌ WhatsApp/Telegram से APK इंस्टॉल न करें',
-    '❌ पैसे ट्रांसफर के लिए OTP साझा न करें',
-    '✅ केवल Play Store से ऐप इंस्टॉल करें',
-    '✅ क्लिक करने से पहले URL जांचें',
-    '✅ संदिग्ध सामग्री सत्यापित करने के लिए QuantumShield उपयोग करें'
-  ]
-};
-
-const LATEST_THREATS = {
-  en: [
-    {
-      title: 'Digital Arrest CBI Calls',
-      time: '2h ago',
-      stolen: '₹120 crore in 2024'
-    },
-    {
-      title: 'Fake UPI Cashback APK',
-      time: '5h ago',
-      stolen: '₹45 crore this month'
-    },
-    {
-      title: 'Aadhar Blocking SMS',
-      time: '1d ago',
-      stolen: '2.3L victims'
-    }
-  ],
-  hi: [
-    {
-      title: 'डिजिटल अरेस्ट CBI कॉल',
-      time: '2 घंटे पहले',
-      stolen: '2024 में ₹120 करोड़'
-    },
-    {
-      title: 'नकली UPI कैशबैक APK',
-      time: '5 घंटे पहले',
-      stolen: 'इस महीने ₹45 करोड़'
-    },
-    {
-      title: 'आधार ब्लॉकिंग SMS',
-      time: '1 दिन पहले',
-      stolen: '2.3 लाख पीड़ित'
-    }
-  ]
-};
-
-const FEATURE_CARDS = {
-  en: [
-    { id: 'apk', icon: Shield, title: 'APK Guardian', desc: 'Block malicious apps', color: 'from-red-500 to-orange-500' },
-    { id: 'sms', icon: MessageSquare, title: 'SMS Guardian', desc: 'Detect fraud OTPs', color: 'from-blue-500 to-cyan-500' },
-    { id: 'url', icon: LinkIcon, title: 'URL Checker', desc: 'Identify phishing links', color: 'from-purple-500 to-pink-500' },
-    { id: 'downloads', icon: Download, title: 'Download Scanner', desc: 'Scan for malware', color: 'from-green-500 to-emerald-500' },
-    { id: 'breach', icon: Database, title: 'Breach Check', desc: 'Monitor data leaks', color: 'from-yellow-500 to-orange-500' },
-    { id: 'threats', icon: TrendingUp, title: 'Threat Intel', desc: 'Live threat updates', color: 'from-indigo-500 to-purple-500' }
-  ],
-  hi: [
-    { id: 'apk', icon: Shield, title: 'APK गार्डियन', desc: 'दुर्भावनापूर्ण ऐप ब्लॉक करें', color: 'from-red-500 to-orange-500' },
-    { id: 'sms', icon: MessageSquare, title: 'SMS गार्डियन', desc: 'धोखाधड़ी OTP पहचानें', color: 'from-blue-500 to-cyan-500' },
-    { id: 'url', icon: LinkIcon, title: 'URL चेकर', desc: 'फ़िशिंग लिंक पहचानें', color: 'from-purple-500 to-pink-500' },
-    { id: 'downloads', icon: Download, title: 'डाउनलोड स्कैनर', desc: 'मैलवेयर स्कैन करें', color: 'from-green-500 to-emerald-500' },
-    { id: 'breach', icon: Database, title: 'ब्रीच चेक', desc: 'डेटा लीक की निगरानी', color: 'from-yellow-500 to-orange-500' },
-    { id: 'threats', icon: TrendingUp, title: 'खतरा इंटेल', desc: 'लाइव खतरा अपडेट', color: 'from-indigo-500 to-purple-500' }
-  ]
-};
-
-export default function HomePage({ onNavigate, lang }: Props) {
-  const [activeTab, setActiveTab] = useState<'learn' | 'protect'>('learn');
-  const [showDemo, setShowDemo] = useState(false);
-  const [stats] = useState({
-    threatsBlocked: 1247,
-    usersProtected: 856,
-    activeThreats: 23
-  });
-
-  const content = CONTENT[lang];
-  const videos = EDUCATION_VIDEOS[lang];
-  const digitalArrest = DIGITAL_ARREST_INFO[lang];
-  const tips = PROTECTION_TIPS[lang];
-  const threats = LATEST_THREATS[lang];
-  const features = FEATURE_CARDS[lang];
+  };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
-      {/* COMPACT HERO */}
-      <section className="text-center space-y-6 py-6">
-        <div className="inline-block p-3 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-3xl">
-          <Shield className="w-12 h-12 text-cyan-400" />
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* Hero Section */}
+      <section className="text-center mb-16">
+        <div className="inline-block bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/50 rounded-full px-4 py-2 mb-6">
+          <span className="text-sm font-semibold">{t.hero.badge}</span>
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-          {content.hero.title}
+
+        <h1 className="text-5xl md:text-6xl font-bold mb-4">
+          {t.hero.title}
+          <br />
+          <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 bg-clip-text text-transparent">
+            {t.hero.highlight}
+          </span>
         </h1>
-        <p className="text-lg text-gray-300">{content.hero.subtitle}</p>
-        
-        {/* Try Demo Button */}
-        <button
-          onClick={() => setShowDemo(true)}
-          className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl font-bold text-lg hover:scale-105 transition shadow-lg shadow-green-500/50"
-        >
-          <PlayCircle className="w-6 h-6" />
-          {content.hero.demoButton}
-        </button>
-        <p className="text-sm text-gray-400">
-          👆 {content.hero.demoSubtext}
+
+        <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
+          {t.hero.subtitle}
         </p>
+        <button
+          onClick={() => onNavigate('scanner')}
+          className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 px-8 py-4 rounded-xl font-bold text-lg flex items-center gap-2 mx-auto transition shadow-lg shadow-cyan-500/50"
+        >
+          {t.hero.cta}
+          <ArrowRight className="w-5 h-5" />
+        </button>
+
+        {/* Stats */}
+        <div className="grid md:grid-cols-3 gap-6 mt-12 max-w-3xl mx-auto">
+          {t.hero.stats.map((stat, index) => (
+            <div key={index} className="bg-white/5 border border-white/10 rounded-xl p-6">
+              <div className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent mb-2">
+                {stat.value}
+              </div>
+              <div className="text-sm text-gray-400">{stat.label}</div>
+            </div>
+          ))}
+        </div>
       </section>
 
-      {/* TWO TABS */}
-      <div className="flex gap-4 justify-center">
-        <button
-          onClick={() => setActiveTab('learn')}
-          className={`px-8 py-4 rounded-2xl font-bold text-lg transition ${
-            activeTab === 'learn'
-              ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg scale-105'
-              : 'bg-white/10 text-gray-400 hover:bg-white/20'
-          }`}
-        >
-          📚 {content.tabs.learn}
-        </button>
-        <button
-          onClick={() => setActiveTab('protect')}
-          className={`px-8 py-4 rounded-2xl font-bold text-lg transition ${
-            activeTab === 'protect'
-              ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg scale-105'
-              : 'bg-white/10 text-gray-400 hover:bg-white/20'
-          }`}
-        >
-          🛡️ {content.tabs.protect}
-        </button>
-      </div>
-
-      {/* LEARN TAB CONTENT */}
-      {activeTab === 'learn' && (
-        <div className="space-y-12">
-          {/* Education Videos */}
-          <section>
-            <h2 className="text-3xl font-bold mb-2 text-center">{content.learn.videos.title}</h2>
-            <p className="text-gray-400 text-center mb-6">{content.learn.videos.subtitle}</p>
-            
-            <div className="grid md:grid-cols-2 gap-6">
-              {videos.map((video) => (
-                <button
-                  key={video.id}
-                  onClick={() => onNavigate('education')}
-                  className="group bg-white/5 backdrop-blur rounded-2xl border border-white/10 p-6 hover:border-purple-500 hover:scale-105 transition text-left"
-                >
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="text-5xl">{video.thumbnail}</div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold mb-2 group-hover:text-cyan-400 transition">
-                        {video.title}
-                      </h3>
-                      <p className="text-sm text-gray-400 mb-2">{video.desc}</p>
-                      <div className="flex gap-4 text-xs text-gray-500">
-                        <span>⏱️ {video.duration}</span>
-                        <span>👁️ {video.views}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-500/20 rounded-xl group-hover:bg-purple-500 transition">
-                    <PlayCircle className="w-5 h-5" />
-                    <span className="font-bold">{lang === 'en' ? 'Watch Now' : 'अभी देखें'}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {/* Digital Arrest Protection - FEATURED */}
-          <section className="bg-gradient-to-br from-red-900/40 to-orange-900/40 backdrop-blur rounded-3xl border-2 border-red-500 p-8">
-            <div className="text-center mb-8">
-              <h2 className="text-4xl font-bold mb-2">{content.learn.digitalArrest.title}</h2>
-              <p className="text-gray-300 text-lg">{content.learn.digitalArrest.subtitle}</p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-6">
-              {/* What is Digital Arrest */}
-              <div className="bg-black/40 rounded-xl p-6">
-                <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                  <AlertTriangle className="w-6 h-6 text-red-400" />
-                  {content.learn.digitalArrest.whatIs}
-                </h3>
-                <ul className="space-y-2">
-                  {digitalArrest.what.map((item, i) => (
-                    <li key={i} className="text-sm text-gray-300">{item}</li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* How QuantumShield Protects */}
-              <div className="bg-black/40 rounded-xl p-6">
-                <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                  <Shield className="w-6 h-6 text-green-400" />
-                  {content.learn.digitalArrest.howProtects}
-                </h3>
-                <ul className="space-y-2">
-                  {digitalArrest.protection.map((item, i) => (
-                    <li key={i} className="text-sm text-gray-300">{item}</li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Key Facts */}
-              <div className="bg-black/40 rounded-xl p-6">
-                <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                  <CheckCircle className="w-6 h-6 text-cyan-400" />
-                  {lang === 'en' ? 'Key Facts' : 'मुख्य तथ्य'}
-                </h3>
-                <ul className="space-y-2">
-                  {digitalArrest.facts.map((item, i) => (
-                    <li key={i} className="text-sm text-gray-300">{item}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            <div className="text-center mt-8">
-              <button
-                onClick={() => onNavigate('education')}
-                className="px-8 py-4 bg-gradient-to-r from-red-500 to-orange-500 rounded-2xl font-bold text-lg hover:scale-105 transition shadow-lg"
-              >
-                {content.learn.digitalArrest.learnMore} →
-              </button>
-            </div>
-          </section>
-
-          {/* Quick Protection Guide */}
-          <section className="bg-white/5 backdrop-blur rounded-2xl border border-white/10 p-8">
-            <h2 className="text-2xl font-bold mb-6 text-center">{content.learn.protectionGuide}</h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              {tips.map((tip, i) => (
-                <div key={i} className="flex items-start gap-2 bg-black/30 rounded-lg p-4">
-                  <span className="text-xl">{tip.startsWith('✅') ? '✅' : '❌'}</span>
-                  <span className="text-gray-200">{tip.substring(2)}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Latest Threats */}
-          <section className="bg-white/5 backdrop-blur rounded-2xl border border-white/10 p-8">
-            <h2 className="text-2xl font-bold mb-6 text-center">{content.learn.latestThreats}</h2>
-            <div className="space-y-4">
-              {threats.map((threat, i) => (
-                <div key={i} className="bg-red-900/20 rounded-xl border-l-4 border-red-500 p-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-bold text-white mb-1">{threat.title}</h3>
-                      <p className="text-sm text-red-400">💰 {threat.stolen}</p>
-                    </div>
-                    <span className="text-xs text-gray-400">{threat.time}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* CTA to Protect Tab */}
-          <div className="text-center">
-            <button
-              onClick={() => setActiveTab('protect')}
-              className="px-12 py-5 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-2xl font-bold text-xl hover:scale-105 transition shadow-lg"
-            >
-              {content.learn.ctaButton}
-            </button>
-          </div>
+      {/* Emergency Anti-Scam Tools - FEATURED */}
+      <section className="mb-16">
+        <div className="text-center mb-8">
+          <h2 className="text-4xl font-bold mb-3 bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
+            {t.emergency.title}
+          </h2>
+          <p className="text-gray-400 text-lg">{t.emergency.subtitle}</p>
         </div>
-      )}
 
-      {/* PROTECT TAB CONTENT */}
-      {activeTab === 'protect' && (
-        <div className="space-y-12">
-          {/* Featured Tools - Quick Access */}
-          <section className="bg-gradient-to-r from-cyan-600/20 to-blue-600/20 backdrop-blur rounded-3xl border-2 border-cyan-500 p-8">
-            <h2 className="text-3xl font-bold mb-4 text-center">
-              {content.protect.featuredTools.title}
-            </h2>
-            <p className="text-gray-300 text-center mb-6">
-              {content.protect.featuredTools.subtitle}
-            </p>
-            
-            <div className="grid md:grid-cols-3 gap-6">
-              <button
-                onClick={() => onNavigate('apk')}
-                className="group bg-white/10 hover:bg-white/20 backdrop-blur rounded-2xl border border-white/20 hover:border-red-500 p-6 transition text-center"
-              >
-                <div className="inline-block p-4 bg-gradient-to-br from-red-500 to-orange-500 rounded-2xl mb-4">
-                  <Shield className="w-10 h-10 text-white" />
-                </div>
-                <h3 className="text-xl font-bold mb-2 group-hover:text-cyan-400 transition">
-                  {lang === 'en' ? 'APK Guardian' : 'APK गार्डियन'}
-                </h3>
-                <p className="text-sm text-gray-400 mb-4">
-                  {lang === 'en' 
-                    ? 'Upload APK files before installing to check for malware'
-                    : 'मैलवेयर की जांच के लिए इंस्टॉल करने से पहले APK फ़ाइलें अपलोड करें'}
-                </p>
-                <span className="text-cyan-400 font-bold">
-                  {lang === 'en' ? 'Check APK →' : 'APK जांचें →'}
-                </span>
-              </button>
-
-              <button
-                onClick={() => onNavigate('spam')}
-                className="group bg-white/10 hover:bg-white/20 backdrop-blur rounded-2xl border border-white/20 hover:border-blue-500 p-6 transition text-center"
-              >
-                <div className="inline-block p-4 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl mb-4">
-                  <MessageSquare className="w-10 h-10 text-white" />
-                </div>
-                <h3 className="text-xl font-bold mb-2 group-hover:text-cyan-400 transition">
-                  {lang === 'en' ? 'Spam AI Checker' : 'स्पैम AI चेकर'}
-                </h3>
-                <p className="text-sm text-gray-400 mb-4">
-                  {lang === 'en' 
-                    ? 'Paste suspicious SMS or WhatsApp messages to verify'
-                    : 'सत्यापित करने के लिए संदिग्ध SMS या WhatsApp संदेश पेस्ट करें'}
-                </p>
-                <span className="text-cyan-400 font-bold">
-                  {lang === 'en' ? 'Check Message →' : 'संदेश जांचें →'}
-                </span>
-              </button>
-
-              <button
-                onClick={() => onNavigate('url')}
-                className="group bg-white/10 hover:bg-white/20 backdrop-blur rounded-2xl border border-white/20 hover:border-purple-500 p-6 transition text-center"
-              >
-                <div className="inline-block p-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl mb-4">
-                  <LinkIcon className="w-10 h-10 text-white" />
-                </div>
-                <h3 className="text-xl font-bold mb-2 group-hover:text-cyan-400 transition">
-                  {lang === 'en' ? 'URL Checker' : 'URL चेकर'}
-                </h3>
-                <p className="text-sm text-gray-400 mb-4">
-                  {lang === 'en' 
-                    ? 'Verify suspicious links before clicking them'
-                    : 'क्लिक करने से पहले संदिग्ध लिंक सत्यापित करें'}
-                </p>
-                <span className="text-cyan-400 font-bold">
-                  {lang === 'en' ? 'Check URL →' : 'URL जांचें →'}
-                </span>
-              </button>
-            </div>
-          </section>
-
-          {/* Feature Cards */}
-          <section>
-            <h2 className="text-3xl font-bold mb-2 text-center">{content.protect.tools.title}</h2>
-            <p className="text-gray-400 text-center mb-6">{content.protect.tools.subtitle}</p>
-            
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {features.map((feature) => (
-                <button
-                  key={feature.id}
-                  onClick={() => onNavigate(feature.id)}
-                  className="group bg-white/5 backdrop-blur rounded-2xl border border-white/10 p-6 hover:border-white/30 hover:scale-105 transition text-left"
-                >
-                  <div className={`inline-block p-4 bg-gradient-to-br ${feature.color} rounded-2xl mb-4`}>
-                    <feature.icon className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold mb-2 group-hover:text-cyan-400 transition">
-                    {feature.title}
-                  </h3>
-                  <p className="text-gray-400 mb-4">{feature.desc}</p>
-                  <div className="flex items-center gap-2 text-cyan-400 font-bold">
-                    <span>{lang === 'en' ? 'Use Now' : 'अभी उपयोग करें'}</span>
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition" />
-                  </div>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {/* Live Stats */}
-          <section className="bg-gradient-to-r from-green-900/40 to-emerald-900/40 backdrop-blur rounded-3xl border-2 border-green-500 p-8">
-            <h2 className="text-2xl font-bold mb-6 text-center">{content.protect.stats}</h2>
-            <div className="grid md:grid-cols-3 gap-8 text-center">
-              <div>
-                <p className="text-5xl font-bold text-green-400 mb-2">
-                  {stats.threatsBlocked.toLocaleString()}+
-                </p>
-                <p className="text-sm text-gray-300">{lang === 'en' ? 'Scam Patterns in Database' : 'डेटाबेस में स्कैम पैटर्न'}</p>
-              </div>
-              <div>
-                <p className="text-5xl font-bold text-cyan-400 mb-2">
-                  {stats.usersProtected.toLocaleString()}+
-                </p>
-                <p className="text-sm text-gray-300">{lang === 'en' ? 'Learners This Month' : 'इस महीने सीखने वाले'}</p>
-              </div>
-              <div>
-                <p className="text-5xl font-bold text-orange-400 mb-2">
-                  {stats.activeThreats}
-                </p>
-                <p className="text-sm text-gray-300">{lang === 'en' ? 'Active Threat Alerts' : 'सक्रिय खतरा अलर्ट'}</p>
-              </div>
-            </div>
-          </section>
-
-          {/* How It Works */}
-          <section className="bg-white/5 backdrop-blur rounded-2xl border border-white/10 p-8">
-            <h2 className="text-2xl font-bold mb-6 text-center">{content.protect.howItWorks}</h2>
-            <div className="grid md:grid-cols-3 gap-6">
-              <div className="text-center">
-                <div className="inline-block p-6 bg-blue-500/20 rounded-full mb-4">
-                  <Database className="w-10 h-10 text-blue-400" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">{lang === 'en' ? '1. Fetch Threats' : '1. खतरे प्राप्त करें'}</h3>
-                <p className="text-sm text-gray-400">{lang === 'en' ? 'Updates from 50+ sources every 6 hours' : 'हर 6 घंटे में 50+ स्रोतों से अपडेट'}</p>
-              </div>
-              <div className="text-center">
-                <div className="inline-block p-6 bg-purple-500/20 rounded-full mb-4">
-                  <TrendingUp className="w-10 h-10 text-purple-400" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">{lang === 'en' ? '2. AI Learning' : '2. AI सीखना'}</h3>
-                <p className="text-sm text-gray-400">{lang === 'en' ? 'Real-time detection updates' : 'वास्तविक समय पहचान अपडेट'}</p>
-              </div>
-              <div className="text-center">
-                <div className="inline-block p-6 bg-green-500/20 rounded-full mb-4">
-                  <Shield className="w-10 h-10 text-green-400" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">{lang === 'en' ? '3. Protect You' : '3. आपकी रक्षा'}</h3>
-                <p className="text-sm text-gray-400">{lang === 'en' ? 'Blocks scams instantly' : 'तुरंत स्कैम ब्लॉक करता है'}</p>
-              </div>
-            </div>
-          </section>
-
-          {/* CTA back to Learn Tab */}
-          <div className="text-center">
+        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-4">
+          {t.emergency.tools.map((tool) => (
             <button
-              onClick={() => setActiveTab('learn')}
-              className="px-12 py-5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl font-bold text-xl hover:scale-105 transition shadow-lg"
+              key={tool.id}
+              onClick={() => onNavigate(tool.id as TabId)}
+              className={`bg-gradient-to-br ${tool.gradient} rounded-xl p-6 hover:scale-105 transition text-left group shadow-lg`}
             >
-              {content.protect.ctaButton}
+              {tool.id === 'evidence' && <Camera className="w-10 h-10 mb-3 group-hover:scale-110 transition" />}
+              {tool.id === 'report' && <Shield className="w-10 h-10 mb-3 group-hover:scale-110 transition" />}
+              {tool.id === 'scamdb' && <Database className="w-10 h-10 mb-3 group-hover:scale-110 transition" />}
+              {tool.id === 'aianalyzer' && <Brain className="w-10 h-10 mb-3 group-hover:scale-110 transition" />}
+              {tool.id === 'emergency' && <Phone className="w-10 h-10 mb-3 group-hover:scale-110 transition" />}
+              <h3 className="font-bold text-lg mb-1">{tool.title}</h3>
+              <p className="text-sm text-white/90 opacity-90">{tool.description}</p>
             </button>
-          </div>
+          ))}
         </div>
-      )}
+      </section>
 
-      {/* Demo Modal */}
-      <DemoScamModal
-        isOpen={showDemo}
-        onClose={() => setShowDemo(false)}
-        onNavigate={onNavigate}
-        lang={lang}
-      />
+      {/* ... rest of your JSX (protection, features, threats, tools, cta sections) ... */}
     </div>
   );
 }

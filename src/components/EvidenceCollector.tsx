@@ -11,8 +11,11 @@ interface Evidence {
 export default function EvidenceCollector({ lang = 'en' }: { lang?: 'en' | 'hi' }) {
   const [recording, setRecording] = useState(false);
   const [evidence, setEvidence] = useState<Evidence[]>([]);
-  const mediaRecorder = useRef<MediaRecorder | null>(null);
   const [notes, setNotes] = useState('');
+
+  const mediaRecorder = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
 
   const content = {
     en: {
@@ -66,31 +69,26 @@ export default function EvidenceCollector({ lang = 'en' }: { lang?: 'en' | 'hi' 
   const takeScreenshot = async () => {
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: { mediaSource: 'screen' }
+        video: true,
+        audio: false
       });
-
       const video = document.createElement('video');
       video.srcObject = stream;
-      video.play();
-
+      await video.play();
       await new Promise(resolve => setTimeout(resolve, 100));
-
       const canvas = document.createElement('canvas');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
-      ctx?.drawImage(video, 0, 0);
-
+      if (ctx) ctx.drawImage(video, 0, 0);
       stream.getTracks().forEach(track => track.stop());
-
       const screenshot = canvas.toDataURL('image/png');
-      
+
       setEvidence(prev => [...prev, {
         type: 'screenshot',
         data: screenshot,
         timestamp: Date.now()
       }]);
-
       alert('✅ Screenshot captured!');
     } catch (error) {
       console.error('Screenshot failed:', error);
@@ -101,50 +99,56 @@ export default function EvidenceCollector({ lang = 'en' }: { lang?: 'en' | 'hi' 
   const startScreenRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: { mediaSource: 'screen' },
+        video: true,
         audio: true
       });
 
-      const recorder = new MediaRecorder(stream, {
-        mimeType: 'video/webm'
-      });
+      streamRef.current = stream;
 
-      const chunks: BlobPart[] = [];
+      const recorder = new MediaRecorder(stream);
+      mediaRecorder.current = recorder;
+
+      chunksRef.current = [];
 
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
-          chunks.push(e.data);
+          chunksRef.current.push(e.data);
         }
       };
 
       recorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'video/webm' });
+        const blob = new Blob(chunksRef.current, { type: 'video/webm' });
         const url = URL.createObjectURL(blob);
-        
+
         setEvidence(prev => [...prev, {
           type: 'recording',
           data: url,
           timestamp: Date.now()
         }]);
 
-        stream.getTracks().forEach(track => track.stop());
+        alert('✅ Recording saved!');
+
+        // Cleanup
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+          streamRef.current = null;
+        }
+        chunksRef.current = [];
+        mediaRecorder.current = null;
       };
 
       recorder.start();
-      mediaRecorder.current = recorder;
       setRecording(true);
-
     } catch (error) {
-      console.error('Recording failed:', error);
-      alert('❌ Recording failed. Make sure you grant permission.');
+      console.error('Recording start failed:', error);
+      alert('❌ Failed to start recording. Please allow screen sharing permission.');
     }
   };
 
-  const stopRecording = () => {
-    if (mediaRecorder.current && recording) {
+  const stopScreenRecording = () => {
+    if (mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
       mediaRecorder.current.stop();
       setRecording(false);
-      alert('✅ Recording saved!');
     }
   };
 
@@ -153,13 +157,11 @@ export default function EvidenceCollector({ lang = 'en' }: { lang?: 'en' | 'hi' 
       alert('Please write some notes first!');
       return;
     }
-
     setEvidence(prev => [...prev, {
       type: 'notes',
-      data: notes,
+      data: notes.trim(),
       timestamp: Date.now()
     }]);
-
     setNotes('');
     alert('✅ Notes saved!');
   };
@@ -169,8 +171,6 @@ export default function EvidenceCollector({ lang = 'en' }: { lang?: 'en' | 'hi' 
       alert('No evidence to download yet!');
       return;
     }
-
-    // Create evidence report
     const report = {
       generatedAt: new Date().toISOString(),
       totalEvidence: evidence.length,
@@ -181,8 +181,6 @@ export default function EvidenceCollector({ lang = 'en' }: { lang?: 'en' | 'hi' 
         data: item.type === 'notes' ? item.data : '[Binary Data]'
       }))
     };
-
-    // Download as JSON
     const blob = new Blob([JSON.stringify(report, null, 2)], {
       type: 'application/json'
     });
@@ -191,7 +189,7 @@ export default function EvidenceCollector({ lang = 'en' }: { lang?: 'en' | 'hi' 
     a.href = url;
     a.download = `scam-evidence-${Date.now()}.json`;
     a.click();
-
+    URL.revokeObjectURL(url);
     alert('✅ Evidence package downloaded! Submit this to police along with screenshots/recordings.');
   };
 
@@ -234,16 +232,18 @@ export default function EvidenceCollector({ lang = 'en' }: { lang?: 'en' | 'hi' 
         <button
           onClick={takeScreenshot}
           className="bg-blue-600 hover:bg-blue-700 px-6 py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition"
+          disabled={recording}
         >
           <Camera className="w-5 h-5" />
           {t.screenshot}
         </button>
 
         <button
-          onClick={recording ? stopRecording : startScreenRecording}
+          onClick={recording ? stopScreenRecording : startScreenRecording}
           className={`${
             recording ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'
           } px-6 py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition`}
+          disabled={recording && mediaRecorder.current?.state === 'inactive'}
         >
           <Video className="w-5 h-5" />
           {recording ? t.stopRecording : t.startRecording}
@@ -263,6 +263,7 @@ export default function EvidenceCollector({ lang = 'en' }: { lang?: 'en' | 'hi' 
         <button
           onClick={saveNotes}
           className="mt-3 bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-lg font-semibold flex items-center gap-2 transition"
+          disabled={!notes.trim()}
         >
           <FileText className="w-5 h-5" />
           Save Notes
@@ -272,18 +273,20 @@ export default function EvidenceCollector({ lang = 'en' }: { lang?: 'en' | 'hi' 
       {/* Evidence List */}
       <div className="bg-white/5 rounded-xl p-6 mb-6">
         <h3 className="font-bold text-lg mb-4">{t.evidenceList}</h3>
-        
+
         {evidence.length === 0 ? (
           <p className="text-gray-400 text-center py-8">{t.noEvidence}</p>
         ) : (
           <div className="space-y-3">
             {evidence.map((item, index) => (
-              <div key={index} className="bg-black/50 border border-white/10 rounded-lg p-4 flex items-center justify-between">
+              <div
+                key={index}
+                className="bg-black/50 border border-white/10 rounded-lg p-4 flex items-center justify-between"
+              >
                 <div className="flex items-center gap-3">
                   {item.type === 'screenshot' && <Camera className="w-5 h-5 text-blue-400" />}
                   {item.type === 'recording' && <Video className="w-5 h-5 text-red-400" />}
                   {item.type === 'notes' && <FileText className="w-5 h-5 text-purple-400" />}
-                  
                   <div>
                     <div className="font-semibold capitalize">{item.type}</div>
                     <div className="text-xs text-gray-400">
@@ -291,7 +294,6 @@ export default function EvidenceCollector({ lang = 'en' }: { lang?: 'en' | 'hi' 
                     </div>
                   </div>
                 </div>
-                
                 <CheckCircle className="w-5 h-5 text-green-400" />
               </div>
             ))}

@@ -2,6 +2,11 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/react";
 import Script from "next/script";
 import "./globals.css";
+<head>
+  <meta name="referrer" content="no-referrer" />
+  {/* Optional: Strict CSP for testing */}
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://platform.twitter.com;" />
+</head>
 
 export const metadata: Metadata = {
   title: "QuantumGuard - AI-Powered Cyber Fraud Prevention",

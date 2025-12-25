@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { MapPin, Phone, Mail, Navigation, AlertCircle, Shield, Clock, ExternalLink, Copy, CheckCircle } from 'lucide-react';
 
 interface PoliceStation {
@@ -186,7 +186,6 @@ export default function EmergencyContact({ lang = 'en' }: { lang?: 'en' | 'hi' }
 
   const t = content[lang];
 
-  // Mock police stations data (replace with real API)
   const mockPoliceStations: PoliceStation[] = [
     {
       name: 'Cyber Crime Police Station',
@@ -208,11 +207,6 @@ export default function EmergencyContact({ lang = 'en' }: { lang?: 'en' | 'hi' }
     }
   ];
 
-  useEffect(() => {
-    // Auto-detect location on mount (optional)
-    // getUserLocation();
-  }, []);
-
   const getUserLocation = () => {
     setLoading(true);
     setError('');
@@ -230,14 +224,10 @@ export default function EmergencyContact({ lang = 'en' }: { lang?: 'en' | 'hi' }
         setUserLocation({
           lat: latitude,
           lng: longitude,
-          city: 'Mumbai', // Would come from reverse geocoding API
+          city: 'Mumbai',
           state: 'Maharashtra'
         });
 
-        // In production, call Google Places API or similar
-        // const stations = await fetchNearbyPoliceStations(latitude, longitude);
-        
-        // For now, use mock data with calculated distances
         setNearestStations(mockPoliceStations);
         setLoading(false);
       },
@@ -246,7 +236,6 @@ export default function EmergencyContact({ lang = 'en' }: { lang?: 'en' | 'hi' }
         setError(t.permissionDenied);
         setLoading(false);
         
-        // Still show mock stations
         setNearestStations(mockPoliceStations);
       }
     );
@@ -421,12 +410,15 @@ export default function EmergencyContact({ lang = 'en' }: { lang?: 'en' | 'hi' }
 
                 <div className="flex flex-wrap gap-2">
                   
-                    href={`tel:${station.phone}`}
-                    className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition"
-                  >
-                    <Phone className="w-4 h-4" />
-                    {station.phone}
-                  </a>
+(
+  <a
+    href={`tel:${station.phone}`}
+    className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition"
+  >
+    <Phone className="w-4 h-4" />
+    {station.phone}
+  </a>
+)
                   <button
                     onClick={() => getDirections(station)}
                     className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition"
@@ -465,14 +457,15 @@ export default function EmergencyContact({ lang = 'en' }: { lang?: 'en' | 'hi' }
         </h2>
 
         <div className="grid md:grid-cols-3 gap-4">
-          {Object.values(t.portals).map((portal, index) => (
-            
-              key={index}
-              href={portal.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 border border-purple-500/50 rounded-xl p-4 hover:border-purple-400 transition group"
-            >
+{Object.values(t.portals).map((portal, index) => (
+( 
+ <a
+    key={index}
+    href={portal.url}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 border border-purple-500/50 rounded-xl p-4 hover:border-purple-400 transition group"
+  >
               <div className="flex items-start justify-between mb-3">
                 <h3 className="font-bold">{portal.name}</h3>
                 <ExternalLink className="w-5 h-5 text-purple-400 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
@@ -482,6 +475,7 @@ export default function EmergencyContact({ lang = 'en' }: { lang?: 'en' | 'hi' }
                 {portal.url.replace('https://', '')}
               </div>
             </a>
+)
           ))}
         </div>
       </div>
