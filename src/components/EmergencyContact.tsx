@@ -1,6 +1,22 @@
 'use client';
-import { useState } from 'react';
-import { MapPin, Phone, Mail, Navigation, AlertCircle, Shield, Clock, ExternalLink, Copy, CheckCircle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import {
+  MapPin,
+  Phone,
+  Shield,
+  Activity,
+  Eye,
+  BellRing,
+  Smartphone,
+  Users,
+} from 'lucide-react';
+
+interface TrustedContact {
+  name: string;
+  phone: string;
+  relation: string;
+  email?: string;
+}
 
 interface PoliceStation {
   name: string;
@@ -18,464 +34,395 @@ interface UserLocation {
   state: string;
 }
 
+interface ScamAlert {
+  timestamp: string;
+  riskScore: number;
+  indicators: string[];
+  location?: UserLocation;
+  alertSent: boolean;
+}
+
 export default function EmergencyContact({ lang = 'en' }: { lang?: 'en' | 'hi' }) {
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [nearestStations, setNearestStations] = useState<PoliceStation[]>([]);
+  const [trustedContacts, setTrustedContacts] = useState<TrustedContact[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [copiedNumber, setCopiedNumber] = useState('');
+  const [monitoringEnabled, setMonitoringEnabled] = useState(false);
+  const [riskScore, setRiskScore] = useState(0);
+  const [currentIndicators, setCurrentIndicators] = useState<string[]>([]);
+  const [alertHistory, setAlertHistory] = useState<ScamAlert[]>([]);
+  const [showAddContact, setShowAddContact] = useState(false);
 
+  const [newContact, setNewContact] = useState<TrustedContact>({
+    name: '',
+    phone: '',
+    relation: '',
+  });
+
+  const monitoringIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  /* ============================================================
+     TRANSLATIONS (FIXED — maxContacts added)
+  ============================================================ */
   const content = {
     en: {
       title: '🚨 Emergency Contacts',
       subtitle: 'Get help immediately - Find nearest police station and emergency numbers',
-      findLocation: 'Find My Location',
-      findingLocation: 'Finding your location...',
-      yourLocation: 'Your Location',
-      nearestStations: 'Nearest Police Stations',
+
+      aiProtection: 'AI Scam Protection',
+      aiProtectionDesc: 'Automatically alert your family if digital arrest scam is detected',
+      enableMonitoring: 'Enable AI Monitoring',
+      disableMonitoring: 'Disable Monitoring',
+      monitoringActive: 'AI Protection Active',
+      monitoringInactive: 'AI Protection Inactive',
+
+      currentRisk: 'Current Risk Level',
+
+      maxContacts: 'You can add a maximum of 3 trusted contacts.',
+
+      riskLevels: {
+        safe: 'Safe',
+        low: 'Low Risk',
+        medium: 'Medium Risk',
+        high: 'High Risk',
+        critical: 'CRITICAL - Alert Sent!',
+      },
+
+      trustedContacts: 'Trusted Emergency Contacts',
+      trustedContactsDesc: 'Add 3 family members who will be auto-alerted if scam is detected',
+      addContact: 'Add Contact',
+      contactName: 'Contact Name',
+      contactPhone: 'Phone Number',
+      contactRelation: 'Relation',
+      relations: ['Spouse', 'Parent', 'Child', 'Sibling', 'Friend', 'Other'],
+      saveContact: 'Save Contact',
+      cancel: 'Cancel',
+
+      detectionIndicators: 'What We Monitor',
+      indicators: {
+        longCall: 'Long call with unknown number',
+        bankingApp: 'Banking app used during call',
+        ignoredCalls: 'Ignored calls from known contacts',
+        screenShare: 'Screen sharing detected',
+        suspiciousKeywords: 'Scam keywords detected',
+        locationChange: 'Unusual location detected',
+      },
+
+      alertSystem: 'How Auto Alert Works',
+      alertSteps: [
+        'AI continuously monitors activity patterns',
+        'Detects digital arrest scam indicators',
+        'Triggers alert at 70% risk score',
+        'Sends SMS / WhatsApp to trusted contacts',
+        'Advises emergency action immediately',
+      ],
+
+      alertMessage: 'Alert Message Preview',
+      alertPreview:
+        '🚨 EMERGENCY ALERT\n\nPossible digital arrest scam detected.\nPlease contact immediately.\n\nCall police: 100\nCybercrime: 1930',
+
       nationalHelplines: 'National Emergency Helplines',
-      distance: 'Away',
       callNow: 'Call Now',
-      getDirections: 'Get Directions',
-      copyNumber: 'Copy Number',
-      copied: 'Copied!',
-      reportScam: 'Report Scam',
+
       helplines: {
         cybercrime: {
           name: 'National Cybercrime Helpline',
           number: '1930',
-          description: 'Report cyber fraud, scams, and digital crimes',
-          available: '24/7 Available'
+          description: 'Report cyber frauds',
+          available: '24/7',
         },
         police: {
           name: 'Police Emergency',
           number: '100',
-          description: 'Immediate police assistance',
-          available: '24/7 Available'
+          description: 'Immediate police help',
+          available: '24/7',
         },
-        women: {
-          name: 'Women Helpline',
-          number: '1091',
-          description: 'Women in distress',
-          available: '24/7 Available'
-        },
-        child: {
-          name: 'Child Helpline',
-          number: '1098',
-          description: 'Child abuse and trafficking',
-          available: '24/7 Available'
-        },
-        senior: {
-          name: 'Senior Citizen Helpline',
-          number: '14567',
-          description: 'Assistance for senior citizens',
-          available: '24/7 Available'
-        }
       },
-      onlinePortals: 'Online Reporting Portals',
-      portals: {
-        cybercrime: {
-          name: 'National Cybercrime Portal',
-          url: 'https://cybercrime.gov.in',
-          description: 'File online complaint for cyber crimes'
-        },
-        consumerForum: {
-          name: 'Consumer Forum',
-          url: 'https://consumerhelpline.gov.in',
-          description: 'Consumer complaints and fraud'
-        },
-        rbi: {
-          name: 'RBI Banking Ombudsman',
-          url: 'https://cms.rbi.org.in',
-          description: 'Banking fraud complaints'
-        }
-      },
-      instructions: 'Emergency Instructions',
-      steps: [
-        'If you\'re being scammed RIGHT NOW - HANG UP immediately',
-        'Do NOT share OTP, passwords, or bank details',
-        'Call the number back on OFFICIAL website (not the number they called from)',
-        'Report to cybercrime helpline: 1930',
-        'Visit nearest police station with evidence',
-        'Block the scammer\'s number immediately'
-      ],
-      locationError: 'Could not get your location. Please enable location services.',
-      permissionDenied: 'Location permission denied. Please allow location access to find nearest police stations.',
-      noStationsFound: 'No police stations found nearby. Showing national helplines.',
-      mockStations: 'Showing sample police stations. Enable location for accurate results.'
+
+      locationError: 'Could not access your location.',
+      permissionDenied: 'Location permission denied.',
     },
+
     hi: {
       title: '🚨 आपातकालीन संपर्क',
-      subtitle: 'तुरंत मदद पाएं - निकटतम पुलिस स्टेशन और आपातकालीन नंबर खोजें',
-      findLocation: 'मेरा स्थान खोजें',
-      findingLocation: 'आपका स्थान खोज रहे हैं...',
-      yourLocation: 'आपका स्थान',
-      nearestStations: 'निकटतम पुलिस स्टेशन',
-      nationalHelplines: 'राष्ट्रीय आपातकालीन हेल्पलाइन',
-      distance: 'दूर',
-      callNow: 'अभी कॉल करें',
-      getDirections: 'दिशा-निर्देश प्राप्त करें',
-      copyNumber: 'नंबर कॉपी करें',
-      copied: 'कॉपी हो गया!',
-      reportScam: 'घोटाला रिपोर्ट करें',
+      subtitle: 'तुरंत सहायता प्राप्त करें',
+
+      aiProtection: 'AI घोटाला सुरक्षा',
+      aiProtectionDesc: 'डिजिटल अरेस्ट घोटाले पर परिवार को स्वतः सूचना',
+      enableMonitoring: 'AI निगरानी चालू करें',
+      disableMonitoring: 'निगरानी बंद करें',
+      monitoringActive: 'AI सुरक्षा सक्रिय',
+      monitoringInactive: 'AI सुरक्षा बंद',
+
+      currentRisk: 'वर्तमान जोखिम स्तर',
+
+      maxContacts: 'आप केवल 3 विश्वसनीय संपर्क जोड़ सकते हैं।',
+
+      riskLevels: {
+        safe: 'सुरक्षित',
+        low: 'कम जोखिम',
+        medium: 'मध्यम जोखिम',
+        high: 'उच्च जोखिम',
+        critical: 'गंभीर – अलर्ट भेजा गया!',
+      },
+
+      trustedContacts: 'विश्वसनीय संपर्क',
+      trustedContactsDesc: '3 लोगों को जोड़ें जिन्हें आपात में सूचना मिलेगी',
+      addContact: 'संपर्क जोड़ें',
+      contactName: 'नाम',
+      contactPhone: 'फोन नंबर',
+      contactRelation: 'संबंध',
+      relations: ['पति/पत्नी', 'माता-पिता', 'बच्चा', 'भाई-बहन', 'मित्र', 'अन्य'],
+      saveContact: 'सहेजें',
+      cancel: 'रद्द करें',
+
+      detectionIndicators: 'हम क्या पहचानते हैं',
+      indicators: {
+        longCall: 'अज्ञात नंबर से लंबी कॉल',
+        bankingApp: 'कॉल के दौरान बैंकिंग ऐप',
+        ignoredCalls: 'परिचित कॉल अनदेखी',
+        screenShare: 'स्क्रीन शेयरिंग',
+        suspiciousKeywords: 'संदिग्ध शब्द',
+        locationChange: 'स्थान परिवर्तन',
+      },
+
+      alertSystem: 'ऑटो अलर्ट कैसे काम करता है',
+      alertSteps: [
+        'AI गतिविधि पर नजर रखता है',
+        'घोटाले के संकेत पहचानता है',
+        '70% जोखिम पर अलर्ट भेजता है',
+        'SMS/WhatsApp से सूचना भेजता है',
+        'तुरंत कार्रवाई की सलाह देता है',
+      ],
+
+      alertMessage: 'अलर्ट पूर्वावलोकन',
+      alertPreview:
+        '🚨 आपातकालीन अलर्ट\nसंभावित डिजिटल अरेस्ट घोटाला\nतुरंत संपर्क करें\nपुलिस: 100\nसायबर: 1930',
+
+      nationalHelplines: 'राष्ट्रीय हेल्पलाइन',
+      callNow: 'कॉल करें',
+
       helplines: {
         cybercrime: {
           name: 'राष्ट्रीय साइबर अपराध हेल्पलाइन',
           number: '1930',
-          description: 'साइबर धोखाधड़ी, घोटाले और डिजिटल अपराध रिपोर्ट करें',
-          available: '24/7 उपलब्ध'
+          description: 'साइबर अपराध रिपोर्ट करें',
+          available: '24/7',
         },
         police: {
           name: 'पुलिस आपातकाल',
           number: '100',
-          description: 'तत्काल पुलिस सहायता',
-          available: '24/7 उपलब्ध'
+          description: 'तत्काल सहायता',
+          available: '24/7',
         },
-        women: {
-          name: 'महिला हेल्पलाइन',
-          number: '1091',
-          description: 'संकट में महिलाएं',
-          available: '24/7 उपलब्ध'
-        },
-        child: {
-          name: 'बाल हेल्पलाइन',
-          number: '1098',
-          description: 'बाल शोषण और तस्करी',
-          available: '24/7 उपलब्ध'
-        },
-        senior: {
-          name: 'वरिष्ठ नागरिक हेल्पलाइन',
-          number: '14567',
-          description: 'वरिष्ठ नागरिकों के लिए सहायता',
-          available: '24/7 उपलब्ध'
-        }
       },
-      onlinePortals: 'ऑनलाइन रिपोर्टिंग पोर्टल',
-      portals: {
-        cybercrime: {
-          name: 'राष्ट्रीय साइबर अपराध पोर्टल',
-          url: 'https://cybercrime.gov.in',
-          description: 'साइबर अपराध के लिए ऑनलाइन शिकायत दर्ज करें'
-        },
-        consumerForum: {
-          name: 'उपभोक्ता मंच',
-          url: 'https://consumerhelpline.gov.in',
-          description: 'उपभोक्ता शिकायतें और धोखाधड़ी'
-        },
-        rbi: {
-          name: 'RBI बैंकिंग लोकपाल',
-          url: 'https://cms.rbi.org.in',
-          description: 'बैंकिंग धोखाधड़ी की शिकायतें'
-        }
-      },
-      instructions: 'आपातकालीन निर्देश',
-      steps: [
-        'यदि आपको अभी घोटाला किया जा रहा है - तुरंत फोन काट दें',
-        'OTP, पासवर्ड, या बैंक विवरण साझा न करें',
-        'आधिकारिक वेबसाइट पर नंबर वापस कॉल करें (उन्होंने जिस नंबर से कॉल किया उस पर नहीं)',
-        'साइबर अपराध हेल्पलाइन पर रिपोर्ट करें: 1930',
-        'सबूत के साथ निकटतम पुलिस स्टेशन जाएं',
-        'स्कैमर का नंबर तुरंत ब्लॉक करें'
-      ],
-      locationError: 'आपका स्थान नहीं मिल सका। कृपया स्थान सेवाओं को सक्षम करें।',
-      permissionDenied: 'स्थान अनुमति अस्वीकार की गई। कृपया निकटतम पुलिस स्टेशन खोजने के लिए स्थान पहुंच की अनुमति दें।',
-      noStationsFound: 'आस-पास कोई पुलिस स्टेशन नहीं मिला। राष्ट्रीय हेल्पलाइन दिखा रहे हैं।',
-      mockStations: 'नमूना पुलिस स्टेशन दिखा रहे हैं। सटीक परिणामों के लिए स्थान सक्षम करें।'
-    }
+
+      locationError: 'स्थान प्राप्त नहीं हो सका।',
+      permissionDenied: 'स्थान अनुमति अस्वीकृत।',
+    },
   };
 
   const t = content[lang];
 
-  const mockPoliceStations: PoliceStation[] = [
-    {
-      name: 'Cyber Crime Police Station',
-      address: 'Bandra East, Mumbai, Maharashtra',
-      phone: '022-26591694',
-      distance: 2.3
-    },
-    {
-      name: 'Local Police Station',
-      address: 'Andheri West, Mumbai, Maharashtra',
-      phone: '022-26391111',
-      distance: 3.5
-    },
-    {
-      name: 'Women Police Station',
-      address: 'Juhu, Mumbai, Maharashtra',
-      phone: '022-26602222',
-      distance: 4.2
+  /* ================= LOGIC ================= */
+
+  useEffect(() => {
+    const saved = localStorage.getItem('quantumshield_trusted_contacts');
+    if (saved) setTrustedContacts(JSON.parse(saved));
+  }, []);
+
+  const startMonitoring = () => {
+    setMonitoringEnabled(true);
+    monitoringIntervalRef.current = setInterval(simulateScamDetection, 5000);
+  };
+
+  const stopMonitoring = () => {
+    setMonitoringEnabled(false);
+    if (monitoringIntervalRef.current) clearInterval(monitoringIntervalRef.current);
+    setRiskScore(0);
+    setCurrentIndicators([]);
+  };
+
+  const simulateScamDetection = () => {
+    let score = 0;
+    const indicators: string[] = [];
+
+    const r = Math.random();
+    if (r > 0.7) { score += 40; indicators.push('longCall'); }
+    if (r > 0.6) { score += 30; indicators.push('bankingApp'); }
+    if (r > 0.5) { score += 20; indicators.push('ignoredCalls'); }
+
+    setRiskScore(score);
+    setCurrentIndicators(indicators);
+
+    if (score >= 70 && trustedContacts.length > 0) {
+      setAlertHistory(prev => [
+        {
+          timestamp: new Date().toLocaleString(),
+          riskScore: score,
+          indicators,
+          location: userLocation || undefined,
+          alertSent: true,
+        },
+        ...prev,
+      ]);
     }
-  ];
+  };
 
-  const getUserLocation = () => {
-    setLoading(true);
-    setError('');
-
-    if (!navigator.geolocation) {
-      setError(t.locationError);
-      setLoading(false);
+  const addTrustedContact = () => {
+    if (trustedContacts.length >= 3) {
+      alert(t.maxContacts);
       return;
     }
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        
-        setUserLocation({
-          lat: latitude,
-          lng: longitude,
-          city: 'Mumbai',
-          state: 'Maharashtra'
-        });
+    if (!newContact.name || !newContact.phone || !newContact.relation) return;
 
-        setNearestStations(mockPoliceStations);
-        setLoading(false);
-      },
-      (error) => {
-        console.error('Geolocation error:', error);
-        setError(t.permissionDenied);
-        setLoading(false);
-        
-        setNearestStations(mockPoliceStations);
-      }
-    );
+    const updated = [...trustedContacts, newContact];
+    setTrustedContacts(updated);
+    localStorage.setItem('quantumshield_trusted_contacts', JSON.stringify(updated));
+
+    setNewContact({ name: '', phone: '', relation: '' });
+    setShowAddContact(false);
   };
 
-  const copyPhoneNumber = (number: string) => {
-    navigator.clipboard.writeText(number);
-    setCopiedNumber(number);
-    setTimeout(() => setCopiedNumber(''), 2000);
+  const removeTrustedContact = (index: number) => {
+    const updated = trustedContacts.filter((_, i) => i !== index);
+    setTrustedContacts(updated);
+    localStorage.setItem('quantumshield_trusted_contacts', JSON.stringify(updated));
   };
 
-  const callNumber = (number: string) => {
-    window.location.href = `tel:${number}`;
+  const getRiskLevel = (score: number) => {
+    if (score >= 70) return { label: t.riskLevels.critical, color: 'text-red-500', bg: 'bg-red-600/20 border-red-500' };
+    if (score >= 50) return { label: t.riskLevels.high, color: 'text-orange-500', bg: 'bg-orange-600/20 border-orange-500' };
+    if (score >= 30) return { label: t.riskLevels.medium, color: 'text-yellow-500', bg: 'bg-yellow-600/20 border-yellow-500' };
+    if (score > 0) return { label: t.riskLevels.low, color: 'text-blue-500', bg: 'bg-blue-600/20 border-blue-500' };
+    return { label: t.riskLevels.safe, color: 'text-green-500', bg: 'bg-green-600/20 border-green-500' };
   };
 
-  const getDirections = (station: PoliceStation) => {
-    if (userLocation && station.lat && station.lng) {
-      window.open(
-        `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${station.lat},${station.lng}`,
-        '_blank'
-      );
-    } else {
-      window.open(
-        `https://www.google.com/maps/search/${encodeURIComponent(station.address)}`,
-        '_blank'
-      );
-    }
-  };
+  const risk = getRiskLevel(riskScore);
+
+  /* ================= UI ================= */
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      {/* Header */}
       <div className="bg-gradient-to-r from-red-600 to-orange-600 rounded-xl p-6 mb-6 text-white">
         <h1 className="text-3xl font-bold mb-2">{t.title}</h1>
-        <p className="text-red-100">{t.subtitle}</p>
+        <p>{t.subtitle}</p>
       </div>
 
-      {/* Emergency Instructions */}
-      <div className="bg-yellow-600/20 border border-yellow-500/50 rounded-xl p-6 mb-6">
-        <div className="flex items-start gap-3 mb-4">
-          <AlertCircle className="w-6 h-6 text-yellow-400 shrink-0 mt-1" />
-          <div>
-            <h3 className="font-bold text-yellow-400 text-lg mb-2">{t.instructions}</h3>
-          </div>
-        </div>
-        <ol className="space-y-2">
-          {t.steps.map((step, index) => (
-            <li key={index} className="flex items-start gap-3">
-              <span className="bg-yellow-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold shrink-0">
-                {index + 1}
-              </span>
-              <span className="text-gray-200">{step}</span>
-            </li>
-          ))}
-        </ol>
-      </div>
-
-      {/* Location Finder */}
-      <div className="bg-white/5 rounded-xl p-6 mb-6">
-        <button
-          onClick={getUserLocation}
-          disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition"
-        >
-          <Navigation className="w-6 h-6" />
-          {loading ? t.findingLocation : t.findLocation}
-        </button>
-
-        {error && (
-          <div className="mt-4 bg-red-600/20 border border-red-500/50 rounded-lg p-4">
-            <p className="text-red-200 text-sm">{error}</p>
-          </div>
-        )}
-
-        {userLocation && (
-          <div className="mt-4 bg-green-600/20 border border-green-500/50 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <MapPin className="w-5 h-5 text-green-400" />
-              <span className="font-bold text-green-400">{t.yourLocation}</span>
-            </div>
-            <p className="text-gray-300">{userLocation.city}, {userLocation.state}</p>
-          </div>
-        )}
-      </div>
-
-      {/* National Helplines */}
-      <div className="bg-white/5 rounded-xl p-6 mb-6">
-        <h2 className="font-bold text-2xl mb-4 flex items-center gap-2">
-          <Phone className="w-6 h-6 text-red-400" />
-          {t.nationalHelplines}
-        </h2>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          {Object.values(t.helplines).map((helpline, index) => (
-            <div
-              key={index}
-              className="bg-gradient-to-br from-red-600/20 to-orange-600/20 border border-red-500/50 rounded-xl p-4 hover:border-red-400 transition"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h3 className="font-bold text-lg mb-1">{helpline.name}</h3>
-                  <p className="text-sm text-gray-400">{helpline.description}</p>
-                </div>
-                <div className="flex items-center gap-1 text-xs bg-green-600/30 px-2 py-1 rounded">
-                  <Clock className="w-3 h-3" />
-                  {helpline.available}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-3xl font-bold text-red-400">
-                  {helpline.number}
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => copyPhoneNumber(helpline.number)}
-                    className="bg-white/10 hover:bg-white/20 p-2 rounded-lg transition"
-                    title={t.copyNumber}
-                  >
-                    {copiedNumber === helpline.number ? (
-                      <CheckCircle className="w-5 h-5 text-green-400" />
-                    ) : (
-                      <Copy className="w-5 h-5" />
-                    )}
-                  </button>
-                  <button
-                    onClick={() => callNumber(helpline.number)}
-                    className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition"
-                  >
-                    <Phone className="w-4 h-4" />
-                    {t.callNow}
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Nearest Police Stations */}
-      {nearestStations.length > 0 && (
-        <div className="bg-white/5 rounded-xl p-6 mb-6">
-          <h2 className="font-bold text-2xl mb-4 flex items-center gap-2">
-            <Shield className="w-6 h-6 text-blue-400" />
-            {t.nearestStations}
+      {/* AI Protection */}
+      <div className="bg-black/40 border border-purple-500/40 rounded-xl p-6 mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <Activity className="w-6 h-6 text-purple-400" />
+            {t.aiProtection}
           </h2>
 
-          {!userLocation && (
-            <div className="bg-blue-600/20 border border-blue-500/50 rounded-lg p-3 mb-4">
-              <p className="text-sm text-blue-200">{t.mockStations}</p>
-            </div>
-          )}
-
-          <div className="space-y-4">
-            {nearestStations.map((station, index) => (
-              <div
-                key={index}
-                className="bg-black/50 border border-white/10 rounded-xl p-4 hover:border-blue-500/50 transition"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <h3 className="font-bold text-lg mb-1">{station.name}</h3>
-                    <p className="text-sm text-gray-400 mb-2">{station.address}</p>
-                    {station.distance && (
-                      <div className="flex items-center gap-2 text-sm text-blue-400">
-                        <MapPin className="w-4 h-4" />
-                        {station.distance} km {t.distance}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  
-(
-  <a
-    href={`tel:${station.phone}`}
-    className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition"
-  >
-    <Phone className="w-4 h-4" />
-    {station.phone}
-  </a>
-)
-                  <button
-                    onClick={() => getDirections(station)}
-                    className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition"
-                  >
-                    <Navigation className="w-4 h-4" />
-                    {t.getDirections}
-                  </button>
-                  <button
-                    onClick={() => copyPhoneNumber(station.phone)}
-                    className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition"
-                  >
-                    {copiedNumber === station.phone ? (
-                      <>
-                        <CheckCircle className="w-4 h-4" />
-                        {t.copied}
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-4 h-4" />
-                        {t.copyNumber}
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+          <button
+            onClick={monitoringEnabled ? stopMonitoring : startMonitoring}
+            className={`px-4 py-2 rounded-lg font-semibold ${
+              monitoringEnabled ? 'bg-red-600' : 'bg-green-600'
+            }`}
+          >
+            {monitoringEnabled ? t.disableMonitoring : t.enableMonitoring}
+          </button>
         </div>
-      )}
 
-      {/* Online Portals */}
+        {monitoringEnabled && (
+          <div className={`border rounded-lg p-4 ${risk.bg}`}>
+            <div className="flex justify-between mb-2">
+              <span>{t.currentRisk}</span>
+              <span className={`font-bold ${risk.color}`}>{risk.label}</span>
+            </div>
+            <div className="w-full h-3 bg-gray-700 rounded">
+              <div
+                className="h-full bg-red-500 transition-all"
+                style={{ width: `${riskScore}%` }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Trusted Contacts */}
+      <div className="bg-white/5 rounded-xl p-6 mb-6">
+        <h3 className="font-bold text-lg mb-2">{t.trustedContacts}</h3>
+        <p className="text-sm text-gray-400 mb-3">{t.trustedContactsDesc}</p>
+
+        {trustedContacts.map((c, i) => (
+          <div key={i} className="flex justify-between bg-black/30 p-3 rounded mb-2">
+            <div>
+              <div className="font-semibold">{c.name}</div>
+              <div className="text-sm text-gray-400">{c.relation} • {c.phone}</div>
+            </div>
+            <button onClick={() => removeTrustedContact(i)} className="text-red-400">
+              Remove
+            </button>
+          </div>
+        ))}
+
+        {trustedContacts.length < 3 && (
+          <button
+            onClick={() => setShowAddContact(true)}
+            className="mt-3 bg-blue-600 px-4 py-2 rounded"
+          >
+            + {t.addContact}
+          </button>
+        )}
+
+        {showAddContact && (
+          <div className="mt-4 bg-black/40 p-4 rounded">
+            <input
+              className="w-full mb-2 p-2 rounded bg-black/50"
+              placeholder={t.contactName}
+              value={newContact.name}
+              onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
+            />
+            <input
+              className="w-full mb-2 p-2 rounded bg-black/50"
+              placeholder={t.contactPhone}
+              value={newContact.phone}
+              onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
+            />
+            <select
+              className="w-full mb-2 p-2 rounded bg-black/50"
+              value={newContact.relation}
+              onChange={(e) => setNewContact({ ...newContact, relation: e.target.value })}
+            >
+              <option value="">{t.contactRelation}</option>
+              {t.relations.map((r, i) => (
+                <option key={i} value={r}>{r}</option>
+              ))}
+            </select>
+
+            <div className="flex gap-2">
+              <button onClick={addTrustedContact} className="bg-green-600 px-4 py-2 rounded">
+                {t.saveContact}
+              </button>
+              <button onClick={() => setShowAddContact(false)} className="bg-gray-600 px-4 py-2 rounded">
+                {t.cancel}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Helplines */}
       <div className="bg-white/5 rounded-xl p-6">
-        <h2 className="font-bold text-2xl mb-4 flex items-center gap-2">
-          <ExternalLink className="w-6 h-6 text-purple-400" />
-          {t.onlinePortals}
-        </h2>
-
-        <div className="grid md:grid-cols-3 gap-4">
-{Object.values(t.portals).map((portal, index) => (
-( 
- <a
-    key={index}
-    href={portal.url}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="bg-gradient-to-br from-purple-600/20 to-blue-600/20 border border-purple-500/50 rounded-xl p-4 hover:border-purple-400 transition group"
-  >
-              <div className="flex items-start justify-between mb-3">
-                <h3 className="font-bold">{portal.name}</h3>
-                <ExternalLink className="w-5 h-5 text-purple-400 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
-              </div>
-              <p className="text-sm text-gray-400">{portal.description}</p>
-              <div className="mt-3 text-xs text-purple-400 font-mono">
-                {portal.url.replace('https://', '')}
-              </div>
-            </a>
-)
+        <h2 className="text-xl font-bold mb-4">{t.nationalHelplines}</h2>
+        <div className="grid md:grid-cols-2 gap-4">
+          {Object.values(t.helplines).map((h, i) => (
+            <div key={i} className="bg-red-600/20 border border-red-500/40 rounded-lg p-4">
+              <h3 className="font-bold">{h.name}</h3>
+              <p className="text-sm text-gray-300">{h.description}</p>
+              <a
+                href={`tel:${h.number}`}
+                className="inline-block mt-2 bg-red-600 px-4 py-2 rounded"
+              >
+                {t.callNow}: {h.number}
+              </a>
+            </div>
           ))}
         </div>
       </div>

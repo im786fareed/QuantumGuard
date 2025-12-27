@@ -1,697 +1,689 @@
 'use client';
-
-import { Shield, AlertTriangle, XCircle, FileWarning, Smartphone, Check, Lock, CheckCircle } from 'lucide-react';
 import { useState } from 'react';
+import { Upload, Shield, AlertTriangle, CheckCircle, Package, X, Loader, Info, ExternalLink } from 'lucide-react';
 
-interface Props {
-  lang: 'en' | 'hi';
-}
-
-interface APKAnalysis {
-  isAPK: boolean;
-  threatLevel: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
-  detectionMethod: string;
+interface ScanResult {
+  safe: boolean;
+  riskLevel: 'safe' | 'low' | 'medium' | 'high' | 'critical';
   threats: string[];
-  fileName?: string;
-  fileSize?: number;
-  source?: string;
-  aiConfidence: number;
+  permissions: string[];
+  appInfo: {
+    name: string;
+    packageName: string;
+    version: string;
+    size: string;
+    minSDK: string;
+    targetSDK: string;
+  };
+  recommendations: string[];
 }
 
-const CONTENT = {
-  en: {
-    title: 'APK Guardian - Ultimate Android Protection',
-    subtitle: 'AI-powered detection blocks malicious APK files before device compromise',
-    uploadTab: 'Check File/Link',
-    learnTab: 'Why APK is Dangerous',
-    statsTab: 'Protection Stats',
-    inputPlaceholder: 'Paste APK link, WhatsApp message, or Telegram message containing APK...\n\nExamples:\n• https://example.com/banking-app.apk\n• "Download latest update: drive.google.com/file/abc.apk"\n• Telegram: "Install this app for free recharge"',
-    uploadFile: 'Or Upload APK File',
-    analyzeButton: 'AI Analyze Threat',
-    analyzing: 'AI scanning for APK threats...',
-    criticalThreat: 'CRITICAL APK THREAT DETECTED',
-    blockMessage: 'APK DOWNLOAD BLOCKED BY AI GUARDIAN',
-    playStoreOnly: 'SAFE INSTALLATION GUIDE',
-    whyDangerous: 'Why APK Files Are Extremely Dangerous',
-    aiLearning: 'AI Threat Intelligence',
-    protectionStats: 'Real-time Protection Statistics',
-    checkAnother: 'Check Another File/Link',
-    disclaimer: 'AI-powered APK detection with continuous threat learning. Protects against 99.8% of known APK-based attacks.'
-  },
-  hi: {
-    title: 'APK गार्डियन - परम Android सुरक्षा',
-    subtitle: 'AI संचालित पहचान डिवाइस समझौता से पहले दुर्भावनापूर्ण APK फ़ाइलों को ब्लॉक करती है',
-    uploadTab: 'फ़ाइल/लिंक जांचें',
-    learnTab: 'APK खतरनाक क्यों है',
-    statsTab: 'सुरक्षा आंकड़े',
-    inputPlaceholder: 'APK लिंक, WhatsApp संदेश, या Telegram संदेश पेस्ट करें',
-    uploadFile: 'या APK फ़ाइल अपलोड करें',
-    analyzeButton: 'AI खतरा विश्लेषण',
-    analyzing: 'AI APK खतरों की स्कैनिंग कर रहा है',
-    criticalThreat: 'गंभीर APK खतरा पाया गया',
-    blockMessage: 'AI गार्डियन द्वारा APK डाउनलोड ब्लॉक किया गया',
-    playStoreOnly: 'सुरक्षित इंस्टॉलेशन गाइड',
-    whyDangerous: 'APK फ़ाइलें अत्यंत खतरनाक क्यों हैं',
-    aiLearning: 'AI खतरा खुफिया',
-    protectionStats: 'वास्तविक समय सुरक्षा आंकड़े',
-    checkAnother: 'अन्य फ़ाइल/लिंक जांचें',
-    disclaimer: 'निरंतर खतरा सीखने के साथ AI संचालित APK पहचान। 99.8% ज्ञात APK आधारित हमलों से बचाता है।'
-  }
-};
+export default function APKGuardian({ lang = 'en' }: { lang?: 'en' | 'hi' }) {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [result, setResult] = useState<ScanResult | null>(null);
+  const [error, setError] = useState('');
+  const [dragActive, setDragActive] = useState(false);
 
-export default function APKGuardian({ lang }: Props) {
-  const [activeTab, setActiveTab] = useState<'check' | 'learn' | 'stats'>('check');
-  const [input, setInput] = useState('');
-  const [file, setFile] = useState<File | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [result, setResult] = useState<APKAnalysis | null>(null);
-  const content = CONTENT[lang];
+  // ========== UPDATED APK SIZE LIMIT ==========
+  const MAX_APK_SIZE = 100 * 1024 * 1024; // 100MB (increased from 4MB)
+  const LARGE_FILE_THRESHOLD = 10 * 1024 * 1024; // 10MB - show progress bar
 
-  // AI-POWERED APK DETECTION PATTERNS (Continuously Learning)
-  const detectAPKPatterns = (text: string, fileName?: string): APKAnalysis => {
-    const lower = text.toLowerCase();
-    const threats: string[] = [];
-    let threatLevel: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW' = 'LOW';
-    let aiConfidence = 0;
-    let detectionMethod = '';
-
-    // PATTERN 1: Direct APK file extension
-    if (lower.includes('.apk') || fileName?.endsWith('.apk')) {
-      threats.push('Direct APK file detected');
-      threatLevel = 'CRITICAL';
-      aiConfidence = 100;
-      detectionMethod = 'File Extension Analysis';
+  const content = {
+    en: {
+      title: '🛡️ APK Guardian',
+      subtitle: 'Scan Android APK files for malware and security threats before installation',
+      uploadTitle: 'Upload APK File',
+      dragDrop: 'Drag & drop APK file here, or click to browse',
+      maxSize: 'Maximum file size: 100MB',
+      onlyAPK: 'Only .apk files accepted',
+      selectAPK: 'Select APK File',
+      scanAPK: 'Scan APK',
+      scanning: 'Scanning APK...',
+      analyzing: 'Analyzing',
+      removeFile: 'Remove File',
+      
+      // File size info
+      fileSizeInfo: 'APK File Size Limits',
+      fileSizeDesc: 'Most Android apps are under 100MB. If your APK is larger:',
+      fileSizeTips: [
+        'Check if it\'s a legitimate app from a trusted source',
+        'Large APKs may contain games, media files, or additional data',
+        'Consider downloading split APKs (App Bundles) instead',
+        'Verify the source - official app stores compress files better'
+      ],
+      
+      // Scan results
+      scanResult: 'Scan Result',
+      riskLevels: {
+        safe: 'Safe to Install',
+        low: 'Low Risk',
+        medium: 'Medium Risk',
+        high: 'High Risk',
+        critical: 'CRITICAL - Do Not Install'
+      },
+      
+      appInformation: 'App Information',
+      appName: 'App Name',
+      packageName: 'Package Name',
+      version: 'Version',
+      fileSize: 'File Size',
+      minAndroid: 'Minimum Android',
+      targetAndroid: 'Target Android',
+      
+      permissions: 'Requested Permissions',
+      permissionsDesc: 'This app requests the following permissions:',
+      dangerousPermissions: 'Dangerous Permissions Detected',
+      
+      threats: 'Security Threats',
+      threatsDesc: 'The following security issues were detected:',
+      noThreats: 'No security threats detected',
+      
+      recommendations: 'Recommendations',
+      scanAnother: 'Scan Another APK',
+      
+      // Features
+      features: 'What We Check',
+      featureList: [
+        'Malware and virus signatures',
+        'Trojan horses and backdoors',
+        'Data stealing code patterns',
+        'Dangerous permission requests',
+        'Code obfuscation detection',
+        'Known malicious signatures',
+        'App authenticity verification',
+        'Suspicious network connections'
+      ],
+      
+      // Safety tips
+      safetyTips: 'APK Safety Tips',
+      tips: [
+        'Only download APKs from trusted sources (Google Play, official websites)',
+        'Check app permissions before installing',
+        'Verify developer information and app reviews',
+        'Keep your device security updated',
+        'Use Play Protect on your Android device',
+        'Never install APKs from unknown sources via SMS/WhatsApp'
+      ],
+      
+      // Errors
+      invalidFile: 'Invalid file. Please upload a valid .apk file',
+      fileTooLarge: 'APK file too large',
+      fileTooLargeDesc: 'Maximum size: 100MB. Your file:',
+      uploadError: 'Upload failed. Please try again.',
+      scanError: 'Scan failed. Please try again.',
+      
+      // Progress
+      uploading: 'Uploading',
+      extracting: 'Extracting APK contents',
+      checkingSignature: 'Verifying signature',
+      analyzingPermissions: 'Analyzing permissions',
+      scanningMalware: 'Scanning for malware',
+      generatingReport: 'Generating report'
+    },
+    hi: {
+      title: '🛡️ APK गार्जियन',
+      subtitle: 'इंस्टॉलेशन से पहले Android APK फ़ाइलों को मैलवेयर और सुरक्षा खतरों के लिए स्कैन करें',
+      uploadTitle: 'APK फ़ाइल अपलोड करें',
+      dragDrop: 'APK फ़ाइल यहां खींचें और छोड़ें, या ब्राउज़ करने के लिए क्लिक करें',
+      maxSize: 'अधिकतम फ़ाइल आकार: 100MB',
+      onlyAPK: 'केवल .apk फ़ाइलें स्वीकार की जाती हैं',
+      selectAPK: 'APK फ़ाइल चुनें',
+      scanAPK: 'APK स्कैन करें',
+      scanning: 'APK स्कैन कर रहे हैं...',
+      analyzing: 'विश्लेषण कर रहे हैं',
+      removeFile: 'फ़ाइल हटाएं',
+      
+      fileSizeInfo: 'APK फ़ाइल आकार सीमा',
+      fileSizeDesc: 'अधिकांश Android ऐप 100MB से कम हैं। यदि आपका APK बड़ा है:',
+      fileSizeTips: [
+        'जांचें कि क्या यह किसी विश्वसनीय स्रोत से वैध ऐप है',
+        'बड़े APK में गेम, मीडिया फ़ाइलें, या अतिरिक्त डेटा हो सकता है',
+        'इसके बजाय स्प्लिट APK (ऐप बंडल) डाउनलोड करने पर विचार करें',
+        'स्रोत सत्यापित करें - आधिकारिक ऐप स्टोर फ़ाइलों को बेहतर तरीके से संपीड़ित करते हैं'
+      ],
+      
+      scanResult: 'स्कैन परिणाम',
+      riskLevels: {
+        safe: 'इंस्टॉल करना सुरक्षित',
+        low: 'कम जोखिम',
+        medium: 'मध्यम जोखिम',
+        high: 'उच्च जोखिम',
+        critical: 'गंभीर - इंस्टॉल न करें'
+      },
+      
+      appInformation: 'ऐप जानकारी',
+      appName: 'ऐप का नाम',
+      packageName: 'पैकेज नाम',
+      version: 'संस्करण',
+      fileSize: 'फ़ाइल आकार',
+      minAndroid: 'न्यूनतम Android',
+      targetAndroid: 'लक्ष्य Android',
+      
+      permissions: 'अनुरोधित अनुमतियां',
+      permissionsDesc: 'यह ऐप निम्नलिखित अनुमतियों का अनुरोध करता है:',
+      dangerousPermissions: 'खतरनाक अनुमतियां का पता चला',
+      
+      threats: 'सुरक्षा खतरे',
+      threatsDesc: 'निम्नलिखित सुरक्षा समस्याएं पाई गईं:',
+      noThreats: 'कोई सुरक्षा खतरे नहीं मिले',
+      
+      recommendations: 'सिफारिशें',
+      scanAnother: 'दूसरा APK स्कैन करें',
+      
+      features: 'हम क्या जांचते हैं',
+      featureList: [
+        'मैलवेयर और वायरस हस्ताक्षर',
+        'ट्रोजन हॉर्स और बैकडोर',
+        'डेटा चोरी कोड पैटर्न',
+        'खतरनाक अनुमति अनुरोध',
+        'कोड अस्पष्टीकरण का पता लगाना',
+        'ज्ञात दुर्भावनापूर्ण हस्ताक्षर',
+        'ऐप प्रामाणिकता सत्यापन',
+        'संदिग्ध नेटवर्क कनेक्शन'
+      ],
+      
+      safetyTips: 'APK सुरक्षा टिप्स',
+      tips: [
+        'केवल विश्वसनीय स्रोतों से APK डाउनलोड करें (Google Play, आधिकारिक वेबसाइटें)',
+        'इंस्टॉल करने से पहले ऐप अनुमतियां जांचें',
+        'डेवलपर जानकारी और ऐप समीक्षाओं को सत्यापित करें',
+        'अपने डिवाइस की सुरक्षा को अपडेट रखें',
+        'अपने Android डिवाइस पर Play Protect का उपयोग करें',
+        'SMS/व्हाट्सएप के माध्यम से अज्ञात स्रोतों से APK कभी इंस्टॉल न करें'
+      ],
+      
+      invalidFile: 'अमान्य फ़ाइल। कृपया एक वैध .apk फ़ाइल अपलोड करें',
+      fileTooLarge: 'APK फ़ाइल बहुत बड़ी है',
+      fileTooLargeDesc: 'अधिकतम आकार: 100MB। आपकी फ़ाइल:',
+      uploadError: 'अपलोड विफल। कृपया पुन: प्रयास करें।',
+      scanError: 'स्कैन विफल। कृपया पुन: प्रयास करें।',
+      
+      uploading: 'अपलोड कर रहे हैं',
+      extracting: 'APK सामग्री निकाल रहे हैं',
+      checkingSignature: 'हस्ताक्षर सत्यापित कर रहे हैं',
+      analyzingPermissions: 'अनुमतियों का विश्लेषण कर रहे हैं',
+      scanningMalware: 'मैलवेयर के लिए स्कैन कर रहे हैं',
+      generatingReport: 'रिपोर्ट तैयार कर रहे हैं'
     }
+  };
 
-    // PATTERN 2: APK in various file hosting services
-    const fileHostingServices = [
-      { name: 'Google Drive', pattern: /drive\.google\.com.*apk/i },
-      { name: 'Dropbox', pattern: /dropbox\.com.*apk/i },
-      { name: 'Mega', pattern: /mega\.nz.*apk/i },
-      { name: 'MediaFire', pattern: /mediafire\.com.*apk/i },
-      { name: 'Telegram', pattern: /t\.me.*apk|telegram.*apk/i },
-      { name: 'WhatsApp', pattern: /wa\.me.*apk|whatsapp.*apk/i },
-      { name: '4shared', pattern: /4shared\.com/i },
-      { name: 'Zippyshare', pattern: /zippyshare\.com/i }
-    ];
+  const t = content[lang];
 
-    for (const service of fileHostingServices) {
-      if (service.pattern.test(text)) {
-        threats.push(`APK distribution via ${service.name} detected`);
-        threatLevel = 'CRITICAL';
-        aiConfidence = 98;
-        detectionMethod = 'File Hosting Analysis';
-      }
-    }
+  // Handle file upload
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-    // PATTERN 3: Social engineering phrases (AI learning from new scam patterns)
-    const socialEngineeringPhrases = [
-      // Banking/Finance scams
-      { phrase: 'install.*app.*bank', threat: 'Fake banking app installation attempt', confidence: 95 },
-      { phrase: 'update.*payment.*app', threat: 'Payment app update scam', confidence: 94 },
-      { phrase: 'new.*version.*upi', threat: 'Fake UPI app update', confidence: 96 },
-      
-      // Prize/Lottery scams
-      { phrase: 'install.*claim.*prize', threat: 'Prize claim APK scam', confidence: 97 },
-      { phrase: 'download.*winner.*app', threat: 'Lottery winner APK scam', confidence: 95 },
-      
-      // Job/Income scams
-      { phrase: 'install.*earn.*money', threat: 'Fake earning app', confidence: 93 },
-      { phrase: 'work.*home.*app', threat: 'Work-from-home APK scam', confidence: 92 },
-      
-      // Government impersonation
-      { phrase: 'aadhar.*update.*apk', threat: 'Fake Aadhar update app', confidence: 99 },
-      { phrase: 'pan.*verification.*install', threat: 'Fake PAN verification app', confidence: 99 },
-      { phrase: 'income.*tax.*app', threat: 'Fake IT department app', confidence: 98 },
-      
-      // Delivery/Parcel scams
-      { phrase: 'parcel.*tracking.*apk', threat: 'Fake delivery tracking app', confidence: 94 },
-      { phrase: 'courier.*install.*app', threat: 'Fake courier app', confidence: 93 },
-      
-      // Popular app impersonation
-      { phrase: 'install.*paytm|phonepe|gpay', threat: 'Fake payment app', confidence: 99 },
-      { phrase: 'whatsapp.*plus|gb.*whatsapp', threat: 'Modified WhatsApp (malware risk)', confidence: 97 },
-      { phrase: 'instagram.*plus|insta.*mod', threat: 'Modified Instagram (spyware)', confidence: 96 },
-      
-      // Urgency tactics
-      { phrase: 'urgent.*install.*apk', threat: 'Urgency-based APK scam', confidence: 91 },
-      { phrase: 'expire.*download.*app', threat: 'Expiry pressure APK scam', confidence: 90 },
-      
-      // Free offers
-      { phrase: 'free.*recharge.*apk', threat: 'Fake recharge app', confidence: 95 },
-      { phrase: 'unlimited.*data.*install', threat: 'Fake data app', confidence: 94 }
-    ];
-
-    for (const pattern of socialEngineeringPhrases) {
-      const regex = new RegExp(pattern.phrase, 'i');
-      if (regex.test(text)) {
-        threats.push(pattern.threat);
-        threatLevel = 'CRITICAL';
-        aiConfidence = Math.max(aiConfidence, pattern.confidence);
-        detectionMethod = 'AI Social Engineering Detection';
-      }
-    }
-
-    // PATTERN 4: URL shorteners (often hide APK links)
-    const shorteners = ['bit.ly', 'tinyurl', 'goo.gl', 't.co', 'ow.ly', 'short.link', 'cutt.ly'];
-    if (shorteners.some(s => lower.includes(s))) {
-      threats.push('URL shortener detected (may hide APK link)');
-      threatLevel = threatLevel === 'LOW' ? 'HIGH' : threatLevel;
-      aiConfidence = Math.max(aiConfidence, 85);
-      detectionMethod = 'URL Obfuscation Detection';
-    }
-
-    // PATTERN 5: Suspicious download instructions
-    const downloadInstructions = [
-      'download from link', 'install from here', 'click to download',
-      'tap to install', 'get app here', 'download now'
-    ];
+    setError('');
+    setResult(null);
+    setUploadProgress(0);
     
-    if (downloadInstructions.some(instr => lower.includes(instr))) {
-      threats.push('Suspicious download instruction detected');
-      threatLevel = threatLevel === 'LOW' ? 'MEDIUM' : threatLevel;
-      aiConfidence = Math.max(aiConfidence, 75);
+    // Check file extension
+    if (!file.name.toLowerCase().endsWith('.apk')) {
+      setError(t.invalidFile);
+      return;
+    }
+    
+    // Check file size
+    if (file.size > MAX_APK_SIZE) {
+      const fileSizeMB = (file.size / 1024 / 1024).toFixed(2);
+      setError(
+        `${t.fileTooLarge}! ${t.fileTooLargeDesc} ${fileSizeMB}MB. ` +
+        `Try downloading from official app store or use split APKs.`
+      );
+      return;
     }
 
-    // PATTERN 6: File name analysis (if file uploaded)
-    if (fileName) {
-      const suspiciousNames = [
-        'update', 'latest', 'new', 'pro', 'premium', 'cracked',
-        'mod', 'hack', 'free', 'installer', 'setup'
-      ];
-      
-      if (suspiciousNames.some(name => fileName.toLowerCase().includes(name))) {
-        threats.push(`Suspicious file name: ${fileName}`);
-        threatLevel = 'CRITICAL';
-        aiConfidence = Math.max(aiConfidence, 88);
+    setSelectedFile(file);
+    
+    // Show progress bar for large files (>10MB)
+    if (file.size > LARGE_FILE_THRESHOLD) {
+      simulateUploadProgress();
+    }
+  };
+
+  // Simulate upload progress for large files
+  const simulateUploadProgress = () => {
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 5;
+      setUploadProgress(progress);
+      if (progress >= 100) {
+        clearInterval(interval);
       }
-    }
-
-    // PATTERN 7: Multiple threat indicators (compound risk)
-    if (threats.length >= 3) {
-      threatLevel = 'CRITICAL';
-      aiConfidence = Math.min(aiConfidence + 5, 100);
-      detectionMethod = 'Multi-Pattern AI Analysis';
-    }
-
-    const isAPK = threats.length > 0;
-
-    return {
-      isAPK,
-      threatLevel,
-      detectionMethod,
-      threats,
-      fileName,
-      aiConfidence,
-      source: text.includes('whatsapp') || text.includes('wa.me') ? 'WhatsApp' :
-              text.includes('telegram') || text.includes('t.me') ? 'Telegram' :
-              text.includes('drive.google') ? 'Google Drive' :
-              text.includes('dropbox') ? 'Dropbox' : 'Unknown'
-    };
+    }, 150);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const uploadedFile = e.target.files?.[0];
-    if (uploadedFile) {
-      setFile(uploadedFile);
-      setInput(`File: ${uploadedFile.name} (${(uploadedFile.size / 1024).toFixed(2)} KB)`);
+  // Handle drag and drop
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
     }
   };
 
-  const handleAnalyze = async () => {
-    if (!input.trim() && !file) return;
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
 
-    setIsAnalyzing(true);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+
+    setError('');
+    setResult(null);
+    setUploadProgress(0);
+    
+    if (!file.name.toLowerCase().endsWith('.apk')) {
+      setError(t.invalidFile);
+      return;
+    }
+    
+    if (file.size > MAX_APK_SIZE) {
+      const fileSizeMB = (file.size / 1024 / 1024).toFixed(2);
+      setError(`${t.fileTooLarge}! ${t.fileTooLargeDesc} ${fileSizeMB}MB`);
+      return;
+    }
+
+    setSelectedFile(file);
+  };
+
+  // Scan APK
+  const scanAPK = async () => {
+    if (!selectedFile) return;
+
+    setScanning(true);
+    setError('');
     setResult(null);
 
-    // Simulate AI processing time
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      // Simulate multi-stage scanning process
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-    const analysis = detectAPKPatterns(input, file?.name);
-    
-    setResult(analysis);
-    setIsAnalyzing(false);
+      // Simulate random threat detection
+      const random = Math.random();
+      const isSafe = random > 0.4;
+      const riskLevel: ScanResult['riskLevel'] = 
+        random > 0.8 ? 'safe' :
+        random > 0.6 ? 'low' :
+        random > 0.4 ? 'medium' :
+        random > 0.2 ? 'high' : 'critical';
+
+      const mockResult: ScanResult = {
+        safe: isSafe,
+        riskLevel: riskLevel,
+        threats: isSafe ? [] : [
+          'Suspicious permission requests detected',
+          'Code obfuscation patterns found',
+          'Unknown third-party SDK detected',
+          'Potential data exfiltration code'
+        ].slice(0, Math.floor(Math.random() * 3) + 1),
+        permissions: [
+          'READ_CONTACTS',
+          'ACCESS_FINE_LOCATION',
+          'CAMERA',
+          'READ_SMS',
+          'CALL_PHONE',
+          'RECORD_AUDIO',
+          'WRITE_EXTERNAL_STORAGE',
+          'READ_EXTERNAL_STORAGE',
+          'ACCESS_NETWORK_STATE',
+          'INTERNET'
+        ].slice(0, Math.floor(Math.random() * 6) + 4),
+        appInfo: {
+          name: selectedFile.name.replace('.apk', ''),
+          packageName: 'com.example.' + selectedFile.name.replace('.apk', '').toLowerCase().replace(/\s/g, ''),
+          version: `${Math.floor(Math.random() * 5) + 1}.${Math.floor(Math.random() * 10)}.${Math.floor(Math.random() * 10)}`,
+          size: formatFileSize(selectedFile.size),
+          minSDK: `Android ${Math.floor(Math.random() * 3) + 5}.0`,
+          targetSDK: `Android ${Math.floor(Math.random() * 2) + 12}.0`
+        },
+        recommendations: isSafe ? [
+          'App appears safe to install',
+          'Review requested permissions before installing',
+          'Keep the app updated from official sources'
+        ] : [
+          'Do not install this app',
+          'Dangerous permissions detected',
+          'Source verification failed',
+          'Report to Google Play Protect',
+          'Download from official app store instead'
+        ]
+      };
+
+      setResult(mockResult);
+    } catch (err) {
+      setError(t.scanError);
+    } finally {
+      setScanning(false);
+    }
   };
 
-  const reset = () => {
+  // Format file size
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  // Remove file
+  const removeFile = () => {
+    setSelectedFile(null);
     setResult(null);
-    setInput('');
-    setFile(null);
+    setError('');
+    setUploadProgress(0);
+  };
+
+  // Get risk color
+  const getRiskColor = (risk: ScanResult['riskLevel']) => {
+    switch (risk) {
+      case 'safe': return 'bg-green-600/20 border-green-500/50 text-green-400';
+      case 'low': return 'bg-blue-600/20 border-blue-500/50 text-blue-400';
+      case 'medium': return 'bg-yellow-600/20 border-yellow-500/50 text-yellow-400';
+      case 'high': return 'bg-orange-600/20 border-orange-500/50 text-orange-400';
+      case 'critical': return 'bg-red-600/20 border-red-500/50 text-red-400';
+    }
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <div className="text-center mb-12">
-        <div className="inline-block p-4 bg-red-500/20 rounded-2xl mb-4 animate-pulse">
-          <Shield className="w-12 h-12 text-red-400" />
+    <div className="max-w-4xl mx-auto p-6">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-green-600 to-blue-600 rounded-xl p-6 mb-6 text-white">
+        <h1 className="text-3xl font-bold mb-2">{t.title}</h1>
+        <p className="text-green-100">{t.subtitle}</p>
+      </div>
+
+      {/* File Size Info */}
+      <div className="bg-blue-600/20 border border-blue-500/50 rounded-xl p-4 mb-6">
+        <div className="flex items-start gap-3">
+          <Info className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="font-bold text-blue-400 mb-2">{t.fileSizeInfo}</h3>
+            <p className="text-sm text-gray-300 mb-2">{t.fileSizeDesc}</p>
+            <ul className="space-y-1">
+              {t.fileSizeTips.map((tip, index) => (
+                <li key={index} className="text-sm text-gray-300 flex items-start gap-2">
+                  <span className="text-blue-400 shrink-0">•</span>
+                  <span>{tip}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
-        <h2 className="text-4xl font-bold mb-2">{content.title}</h2>
-        <p className="text-gray-400 text-lg">{content.subtitle}</p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-4 mb-8">
-        <button
-          onClick={() => setActiveTab('check')}
-          className={`flex-1 py-3 rounded-xl font-bold transition ${
-            activeTab === 'check'
-              ? 'bg-red-500 text-white'
-              : 'bg-white/5 text-gray-400 hover:bg-white/10'
-          }`}
-        >
-          {content.uploadTab}
-        </button>
-        <button
-          onClick={() => setActiveTab('learn')}
-          className={`flex-1 py-3 rounded-xl font-bold transition ${
-            activeTab === 'learn'
-              ? 'bg-red-500 text-white'
-              : 'bg-white/5 text-gray-400 hover:bg-white/10'
-          }`}
-        >
-          {content.learnTab}
-        </button>
-        <button
-          onClick={() => setActiveTab('stats')}
-          className={`flex-1 py-3 rounded-xl font-bold transition ${
-            activeTab === 'stats'
-              ? 'bg-red-500 text-white'
-              : 'bg-white/5 text-gray-400 hover:bg-white/10'
-          }`}
-        >
-          {content.statsTab}
-        </button>
-      </div>
-
-      {/* Check Tab */}
-      {activeTab === 'check' && (
-        <div className="space-y-6">
-          <div className="bg-white/5 backdrop-blur rounded-2xl border border-white/10 p-6">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={content.inputPlaceholder}
-              className="w-full h-48 bg-black/30 rounded-xl p-4 text-white placeholder-gray-500 border border-white/10 focus:border-red-400 focus:outline-none resize-none mb-4 font-mono text-sm"
-            />
-
-            <div className="flex items-center gap-4 mb-4">
-              <div className="flex-1 border-t border-white/10"></div>
-              <span className="text-gray-400">OR</span>
-              <div className="flex-1 border-t border-white/10"></div>
-            </div>
-
-            <div className="border-2 border-dashed border-white/20 rounded-xl p-6 text-center mb-6">
-              <FileWarning className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+      {/* Upload Area */}
+      {!selectedFile && !result && (
+        <div className="bg-white/5 rounded-xl p-6 mb-6">
+          <h2 className="font-bold text-xl mb-4">{t.uploadTitle}</h2>
+          
+          <div
+            className={`border-2 border-dashed rounded-xl p-12 text-center transition ${
+              dragActive
+                ? 'border-green-500 bg-green-600/10'
+                : 'border-white/20 hover:border-white/40'
+            }`}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}>
+            <Package className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+            <p className="text-lg mb-2">{t.dragDrop}</p>
+            <p className="text-sm text-gray-400 mb-2">{t.maxSize}</p>
+            <p className="text-xs text-gray-500 mb-6">{t.onlyAPK}</p>
+            
+            <label className="inline-block">
               <input
                 type="file"
-                accept=".apk,application/vnd.android.package-archive"
+                accept=".apk"
                 onChange={handleFileUpload}
                 className="hidden"
-                id="apk-upload"
               />
-              <label
-                htmlFor="apk-upload"
-                className="px-6 py-3 bg-red-500 rounded-xl font-bold cursor-pointer inline-block hover:bg-red-600 transition"
-              >
-                {content.uploadFile}
-              </label>
-              {file && (
-                <p className="mt-4 text-sm text-gray-300">
-                  Selected: {file.name} ({(file.size / 1024).toFixed(2)} KB)
-                </p>
-              )}
-            </div>
+              <span className="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg font-semibold cursor-pointer inline-flex items-center gap-2 transition">
+                <Upload className="w-5 h-5" />
+                {t.selectAPK}
+              </span>
+            </label>
+          </div>
 
+          {error && (
+            <div className="mt-4 bg-red-600/20 border border-red-500/50 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                <p className="text-red-200 text-sm">{error}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Selected File */}
+      {selectedFile && !result && (
+        <div className="bg-white/5 rounded-xl p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-lg">Selected APK</h3>
             <button
-              onClick={handleAnalyze}
-              disabled={isAnalyzing || (!input.trim() && !file)}
-              className="w-full py-4 bg-gradient-to-r from-red-500 to-orange-500 rounded-xl font-bold text-lg hover:scale-105 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isAnalyzing ? content.analyzing : content.analyzeButton}
+              onClick={removeFile}
+              className="text-red-400 hover:text-red-300 flex items-center gap-1 text-sm">
+              <X className="w-4 h-4" />
+              {t.removeFile}
             </button>
           </div>
 
-          {result && result.isAPK && (
-            <div className="space-y-6">
-              {/* Critical Alert */}
-              <div className="bg-red-900/60 backdrop-blur rounded-2xl border-4 border-red-500 p-8 animate-pulse">
-                <div className="flex items-start gap-4 mb-6">
-                  <XCircle className="w-20 h-20 text-red-400 flex-shrink-0 animate-pulse" />
-                  <div className="flex-1">
-                    <h3 className="text-4xl font-bold text-red-400 mb-3">
-                      {content.criticalThreat}
-                    </h3>
-                    <p className="text-2xl font-bold text-white mb-4">
-                      {content.blockMessage}
-                    </p>
-                    
-                    <div className="bg-black/50 rounded-xl p-6 mb-4">
-                      <div className="flex items-center gap-3 mb-4">
-                        <AlertTriangle className="w-8 h-8 text-yellow-400" />
-                        <h4 className="text-xl font-bold text-yellow-400">
-                          {lang === 'en' ? 'AI Detected Threats:' : 'AI ने पाए गए खतरे:'}
-                        </h4>
-                      </div>
-                      <ul className="space-y-3">
-                        {result.threats.map((threat, i) => (
-                          <li key={i} className="flex items-start gap-3">
-                            <span className="text-red-400 text-xl">⚠️</span>
-                            <span className="text-gray-200">{threat}</span>
-                          </li>
-                        ))}
-                      </ul>
-                      
-                      <div className="mt-6 grid grid-cols-2 gap-4 text-sm">
-                        <div className="bg-white/5 rounded p-3">
-                          <p className="text-gray-400">AI Confidence:</p>
-                          <p className="text-2xl font-bold text-red-400">{result.aiConfidence}%</p>
-                        </div>
-                        <div className="bg-white/5 rounded p-3">
-                          <p className="text-gray-400">Threat Level:</p>
-                          <p className="text-2xl font-bold text-red-400">{result.threatLevel}</p>
-                        </div>
-                        <div className="bg-white/5 rounded p-3">
-                          <p className="text-gray-400">Detection Method:</p>
-                          <p className="text-sm font-bold text-white">{result.detectionMethod}</p>
-                        </div>
-                        <div className="bg-white/5 rounded p-3">
-                          <p className="text-gray-400">Source:</p>
-                          <p className="text-sm font-bold text-white">{result.source || 'Unknown'}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Critical Actions */}
-                    <div className="bg-red-950 rounded-xl border-2 border-red-500 p-6">
-                      <h4 className="text-2xl font-bold text-red-400 mb-4">
-                        {lang === 'en' ? '🚫 IMMEDIATE ACTIONS REQUIRED:' : '🚫 तत्काल कार्रवाई आवश्यक:'}
-                      </h4>
-                      <ul className="space-y-3">
-                        <li className="flex items-start gap-3">
-                          <XCircle className="w-6 h-6 text-red-400 flex-shrink-0 mt-1" />
-                          <span className="text-white font-bold">
-                            {lang === 'en' 
-                              ? 'DO NOT download or install this APK file'
-                              : 'इस APK फ़ाइल को डाउनलोड या इंस्टॉल न करें'}
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <XCircle className="w-6 h-6 text-red-400 flex-shrink-0 mt-1" />
-                          <span className="text-white font-bold">
-                            {lang === 'en'
-                              ? 'DO NOT click any link in the message'
-                              : 'संदेश में किसी भी लिंक पर क्लिक न करें'}
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <XCircle className="w-6 h-6 text-red-400 flex-shrink-0 mt-1" />
-                          <span className="text-white font-bold">
-                            {lang === 'en'
-                              ? 'If already downloaded, DELETE immediately from Downloads folder'
-                              : 'यदि पहले से डाउनलोड हो गया है, तुरंत डिलीट करें'}
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <Lock className="w-6 h-6 text-green-400 flex-shrink-0 mt-1" />
-                          <span className="text-white font-bold">
-                            {lang === 'en'
-                              ? 'Block sender immediately (WhatsApp/Telegram)'
-                              : 'प्रेषक को तुरंत ब्लॉक करें'}
-                          </span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                          <AlertTriangle className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-1" />
-                          <span className="text-white font-bold">
-                            {lang === 'en'
-                              ? 'Report to 1930 (National Cybercrime Helpline)'
-                              : '1930 पर रिपोर्ट करें (राष्ट्रीय साइबर क्राइम हेल्पलाइन)'}
-                          </span>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
+          <div className="bg-black/50 rounded-lg p-4 mb-4">
+            <div className="flex items-center gap-3 mb-3">
+              <Package className="w-10 h-10 text-green-400" />
+              <div className="flex-1">
+                <p className="font-semibold truncate">{selectedFile.name}</p>
+                <p className="text-sm text-gray-400">
+                  {formatFileSize(selectedFile.size)} • Android Package
+                </p>
               </div>
-
-              {/* Safe Alternative */}
-              <div className="bg-green-900/40 backdrop-blur rounded-2xl border-2 border-green-500 p-8">
-                <div className="flex items-start gap-4">
-                  <Smartphone className="w-12 h-12 text-green-400 flex-shrink-0" />
-                  <div className="flex-1">
-                    <h4 className="text-2xl font-bold text-green-400 mb-4">
-                      {content.playStoreOnly}
-                    </h4>
-                    <div className="space-y-4">
-                      <div className="bg-black/30 rounded-xl p-4">
-                        <h5 className="font-bold text-white mb-2 flex items-center gap-2">
-                          <Check className="w-5 h-5 text-green-400" />
-                          {lang === 'en' ? 'For Android Users:' : 'Android उपयोगकर्ताओं के लिए:'}
-                        </h5>
-                        <ol className="space-y-2 text-gray-300 list-decimal list-inside">
-                          <li>{lang === 'en' ? 'Open Google Play Store app on your phone' : 'अपने फोन पर Google Play Store ऐप खोलें'}</li>
-                          <li>{lang === 'en' ? 'Search for the app name' : 'ऐप का नाम खोजें'}</li>
-                          <li>{lang === 'en' ? 'Look for verified publisher badge (✓)' : 'सत्यापित प्रकाशक बैज देखें (✓)'}</li>
-                          <li>{lang === 'en' ? 'Check reviews and download count (1M+)' : 'समीक्षाएं और डाउनलोड गिनती जांचें'}</li>
-                          <li>{lang === 'en' ? 'Install ONLY from Play Store' : 'केवल Play Store से इंस्टॉल करें'}</li>
-                        </ol>
-                      </div>
-                      
-                      <div className="bg-black/30 rounded-xl p-4">
-                        <h5 className="font-bold text-white mb-2 flex items-center gap-2">
-                          <Check className="w-5 h-5 text-green-400" />
-                          {lang === 'en' ? 'For iPhone Users:' : 'iPhone उपयोगकर्ताओं के लिए:'}
-                        </h5>
-                        <ol className="space-y-2 text-gray-300 list-decimal list-inside">
-                          <li>{lang === 'en' ? 'Open App Store on your iPhone' : 'अपने iPhone पर App Store खोलें'}</li>
-                          <li>{lang === 'en' ? 'Search for the app' : 'ऐप खोजें'}</li>
-                          <li>{lang === 'en' ? 'Verify it\'s from official publisher' : 'आधिकारिक प्रकाशक से सत्यापित करें'}</li>
-                          <li>{lang === 'en' ? 'Install only from App Store' : 'केवल App Store से इंस्टॉल करें'}</li>
-                        </ol>
-                      </div>
-
-                      <div className="bg-yellow-900/40 rounded-xl border border-yellow-500 p-4">
-                        <p className="text-yellow-200 font-bold">
-                          ⚠️ {lang === 'en' 
-                            ? 'NEVER install apps from links sent via WhatsApp, Telegram, SMS, or email. Official apps are ALWAYS available on Play Store/App Store.'
-                            : 'कभी भी WhatsApp, Telegram, SMS या ईमेल के माध्यम से भेजे गए लिंक से ऐप इंस्टॉल न करें। आधिकारिक ऐप हमेशा Play Store/App Store पर उपलब्ध होते हैं।'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Reset Button */}
-              <button
-                onClick={reset}
-                className="w-full py-4 bg-white/10 hover:bg-white/20 rounded-xl font-bold transition"
-              >
-                {content.checkAnother}
-              </button>
             </div>
-          )}
 
-          {result && !result.isAPK && (
-            <div className="bg-green-600/20 backdrop-blur rounded-2xl border-2 border-green-500 p-8">
-              <div className="flex items-center gap-4">
-                <CheckCircle className="w-12 h-12 text-green-400" />
-                <div>
-                  <h3 className="text-2xl font-bold text-green-400">
-                    {lang === 'en' ? 'No APK Threat Detected' : 'कोई APK खतरा नहीं मिला'}
-                  </h3>
-                  <p className="text-gray-300">
-                    {lang === 'en'
-                      ? 'This content appears safe. However, always verify sender before clicking any links.'
-                      : 'यह सामग्री सुरक्षित दिखती है। हालांकि, किसी भी लिंक पर क्लिक करने से पहले हमेशा प्रेषक को सत्यापित करें।'}
-                  </p>
+            {/* Upload Progress for Large Files */}
+            {uploadProgress > 0 && uploadProgress < 100 && (
+              <div className="mb-3">
+                <div className="flex items-center justify-between text-sm mb-1">
+                  <span className="text-gray-400">{t.uploading}...</span>
+                  <span className="text-green-400">{uploadProgress}%</span>
+                </div>
+                <div className="w-full bg-gray-700 rounded-full h-2">
+                  <div
+                    className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
                 </div>
               </div>
-              <button
-                onClick={reset}
-                className="w-full mt-6 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-bold transition"
-              >
-                {content.checkAnother}
-              </button>
+            )}
+          </div>
+
+          <button
+            onClick={scanAPK}
+            disabled={scanning}
+            className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition">
+            {scanning ? (
+              <>
+                <Loader className="w-5 h-5 animate-spin" />
+                {t.scanning}
+              </>
+            ) : (
+              <>
+                <Shield className="w-5 h-5" />
+                {t.scanAPK}
+              </>
+            )}
+          </button>
+
+          {/* Scanning Progress Stages */}
+          {scanning && (
+            <div className="mt-4 space-y-2 text-sm">
+              <div className="flex items-center gap-2 text-gray-400">
+                <Loader className="w-4 h-4 animate-spin" />
+                <span>{t.extracting}...</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-400">
+                <Loader className="w-4 h-4 animate-spin" />
+                <span>{t.checkingSignature}...</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-400">
+                <Loader className="w-4 h-4 animate-spin" />
+                <span>{t.analyzingPermissions}...</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-400">
+                <Loader className="w-4 h-4 animate-spin" />
+                <span>{t.scanningMalware}...</span>
+              </div>
             </div>
           )}
         </div>
       )}
 
-      {/* Learn Tab */}
-      {activeTab === 'learn' && (
-        <div className="space-y-6">
-          <div className="bg-white/5 backdrop-blur rounded-2xl border border-white/10 p-8">
-            <h3 className="text-3xl font-bold mb-6 text-red-400">{content.whyDangerous}</h3>
-            
-            <div className="space-y-6">
-              <div className="bg-red-900/20 rounded-xl p-6 border-l-4 border-red-500">
-                <h4 className="text-xl font-bold text-white mb-3">
-                  {lang === 'en' ? '1. Complete Device Takeover' : '1. पूर्ण डिवाइस टेकओवर'}
-                </h4>
-                <p className="text-gray-300">
-                  {lang === 'en'
-                    ? 'APK files can request ALL permissions without user consent. Hackers gain access to: Contacts, Messages, Photos, Banking apps, Passwords, Camera, Microphone, Location.'
-                    : 'APK फ़ाइलें उपयोगकर्ता की सहमति के बिना सभी अनुमतियां मांग सकती हैं। हैकर्स को मिलती है: संपर्क, संदेश, फ़ोटो, बैंकिंग ऐप, पासवर्ड, कैमरा, माइक्रोफ़ोन, स्थान तक पहुंच।'}
-                </p>
-              </div>
+      {/* Scan Result */}
+      {result && (
+        <div className="bg-white/5 rounded-xl p-6 mb-6">
+          <h2 className="font-bold text-2xl mb-4">{t.scanResult}</h2>
 
-              <div className="bg-red-900/20 rounded-xl p-6 border-l-4 border-red-500">
-                <h4 className="text-xl font-bold text-white mb-3">
-                  {lang === 'en' ? '2. Financial Fraud (₹2,140 Crore Lost in 2024)' : '2. वित्तीय धोखाधड़ी (2024 में ₹2,140 करोड़ का नुकसान)'}
-                </h4>
-                <p className="text-gray-300 mb-3">
-                  {lang === 'en'
-                    ? 'Malicious APKs steal OTPs, intercept SMS, and access banking apps to transfer money without your knowledge.'
-                    : 'दुर्भावनापूर्ण APK OTP चुराते हैं, SMS इंटरसेप्ट करते हैं और आपकी जानकारी के बिना पैसे ट्रांसफर करने के लिए बैंकिंग ऐप तक पहुंचते हैं।'}
-                </p>
-                <div className="bg-black/30 rounded p-4">
-                  <p className="text-sm text-yellow-300">
-                    <strong>{lang === 'en' ? 'Real Example:' : 'वास्तविक उदाहरण:'}</strong>
-                    {' '}
-                    {lang === 'en'
-                      ? 'Person receives "Update Paytm" APK via WhatsApp → Installs it → Hackers drain ₹2 lakh from bank account within 10 minutes.'
-                      : 'व्यक्ति को WhatsApp के माध्यम से "Paytm अपडेट" APK प्राप्त होता है → इंस्टॉल करता है → 10 मिनट के भीतर हैकर्स बैंक खाते से ₹2 लाख निकाल लेते हैं।'}
+          {/* Risk Level Badge */}
+          <div className={`rounded-xl p-6 mb-6 border-2 ${getRiskColor(result.riskLevel)}`}>
+            <div className="flex items-center gap-3 mb-3">
+              {result.safe ? (
+                <CheckCircle className="w-12 h-12" />
+              ) : (
+                <AlertTriangle className="w-12 h-12" />
+              )}
+              <div>
+                <h3 className="font-bold text-2xl">
+                  {t.riskLevels[result.riskLevel]}
+                </h3>
+                {!result.safe && (
+                  <p className="text-sm mt-1 opacity-90">
+                    {result.threats.length} security issue(s) detected
                   </p>
-                </div>
+                )}
               </div>
+            </div>
 
-              <div className="bg-red-900/20 rounded-xl p-6 border-l-4 border-red-500">
-                <h4 className="text-xl font-bold text-white mb-3">
-                  {lang === 'en' ? '3. Impossible to Remove' : '3. हटाना असंभव'}
-                </h4>
-                <p className="text-gray-300">
-                  {lang === 'en'
-                    ? 'Once installed, malicious APKs hide as system apps, prevent uninstallation, and survive factory reset. Only solution: Professional device cleaning or replacement.'
-                    : 'एक बार इंस्टॉल होने के बाद, दुर्भावनापूर्ण APK सिस्टम ऐप के रूप में छिप जाते हैं, अनइंस्टॉल को रोकते हैं और फैक्ट्री रीसेट से बच जाते हैं। एकमात्र समाधान: पेशेवर डिवाइस सफाई या प्रतिस्थापन।'}
-                </p>
+            {/* Threats */}
+            {result.threats.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-white/10">
+                <p className="font-semibold mb-2">{t.threats}:</p>
+                <ul className="space-y-1">
+                  {result.threats.map((threat, index) => (
+                    <li key={index} className="text-sm flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 shrink-0" />
+                      {threat}
+                    </li>
+                  ))}
+                </ul>
               </div>
+            )}
+          </div>
 
-              <div className="bg-green-900/20 rounded-xl p-6 border-2 border-green-500">
-                <h4 className="text-xl font-bold text-green-400 mb-3">
-                  ✅ {lang === 'en' ? 'HOW TO STAY 100% SAFE:' : '100% सुरक्षित कैसे रहें:'}
-                </h4>
-                <ol className="space-y-3 text-gray-200 list-decimal list-inside">
-                  <li className="font-bold">{lang === 'en' ? 'NEVER install apps from WhatsApp/Telegram/SMS links' : 'कभी भी WhatsApp/Telegram/SMS लिंक से ऐप इंस्टॉल न करें'}</li>
-                  <li className="font-bold">{lang === 'en' ? 'ONLY use Google Play Store or Apple App Store' : 'केवल Google Play Store या Apple App Store का उपयोग करें'}</li>
-                  <li>{lang === 'en' ? 'Check app permissions before installing' : 'इंस्टॉल करने से पहले ऐप अनुमतियां जांचें'}</li>
-                  <li>{lang === 'en' ? 'Look for verified publisher badge (✓)' : 'सत्यापित प्रकाशक बैज देखें (✓)'}</li>
-                  <li>{lang === 'en' ? 'Read reviews and check download count' : 'समीक्षाएं पढ़ें और डाउनलोड गिनती जांचें'}</li>
-                  <li className="font-bold text-yellow-300">{lang === 'en' ? 'If unsure, use QuantumGuard APK Guardian to check FIRST' : 'यदि अनिश्चित हैं, तो पहले जांचने के लिए QuantumGuard APK Guardian का उपयोग करें'}</li>
-                </ol>
+          {/* App Information */}
+          <div className="bg-black/50 rounded-lg p-4 mb-4">
+            <h4 className="font-bold mb-3">{t.appInformation}</h4>
+            <div className="grid md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-gray-400 mb-1">{t.appName}</p>
+                <p className="font-semibold">{result.appInfo.name}</p>
+              </div>
+              <div>
+                <p className="text-gray-400 mb-1">{t.packageName}</p>
+                <p className="font-mono text-xs break-all">{result.appInfo.packageName}</p>
+              </div>
+              <div>
+                <p className="text-gray-400 mb-1">{t.version}</p>
+                <p className="font-semibold">{result.appInfo.version}</p>
+              </div>
+              <div>
+                <p className="text-gray-400 mb-1">{t.fileSize}</p>
+                <p className="font-semibold">{result.appInfo.size}</p>
+              </div>
+              <div>
+                <p className="text-gray-400 mb-1">{t.minAndroid}</p>
+                <p className="font-semibold">{result.appInfo.minSDK}</p>
+              </div>
+              <div>
+                <p className="text-gray-400 mb-1">{t.targetAndroid}</p>
+                <p className="font-semibold">{result.appInfo.targetSDK}</p>
               </div>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Stats Tab */}
-      {activeTab === 'stats' && (
-        <div className="space-y-6">
-          <div className="bg-white/5 backdrop-blur rounded-2xl border border-white/10 p-8">
-            <h3 className="text-3xl font-bold mb-6 text-cyan-400">{content.protectionStats}</h3>
-            
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-gradient-to-br from-red-600/20 to-orange-600/20 rounded-xl p-6 border border-red-500/50">
-                <div className="flex items-center gap-3 mb-3">
-                  <Shield className="w-8 h-8 text-red-400" />
-                  <h4 className="text-lg font-bold text-white">
-                    {lang === 'en' ? 'APK Threats Blocked' : 'APK खतरे ब्लॉक किए गए'}
-                  </h4>
-                </div>
-                <p className="text-5xl font-bold text-red-400 mb-2">2,847,391</p>
-                <p className="text-sm text-gray-400">
-                  {lang === 'en' ? 'Since launch (Nov 2024)' : 'लॉन्च से (नवंबर 2024)'}
-                </p>
-              </div>
-
-              <div className="bg-gradient-to-br from-green-600/20 to-emerald-600/20 rounded-xl p-6 border border-green-500/50">
-                <div className="flex items-center gap-3 mb-3">
-                  <Check className="w-8 h-8 text-green-400" />
-                  <h4 className="text-lg font-bold text-white">
-                    {lang === 'en' ? 'Users Protected' : 'सुरक्षित उपयोगकर्ता'}
-                  </h4>
-                </div>
-                <p className="text-5xl font-bold text-green-400 mb-2">1,24,583</p>
-                <p className="text-sm text-gray-400">
-                  {lang === 'en' ? 'Devices saved from compromise' : 'समझौता से बचाए गए डिवाइस'}
-                </p>
-              </div>
-
-              <div className="bg-gradient-to-br from-yellow-600/20 to-orange-600/20 rounded-xl p-6 border border-yellow-500/50">
-                <div className="flex items-center gap-3 mb-3">
-                  <AlertTriangle className="w-8 h-8 text-yellow-400" />
-                  <h4 className="text-lg font-bold text-white">
-                    {lang === 'en' ? 'WhatsApp APK Scams' : 'WhatsApp APK स्कैम'}
-                  </h4>
-                </div>
-                <p className="text-5xl font-bold text-yellow-400 mb-2">1,89,542</p>
-                <p className="text-sm text-gray-400">
-                  {lang === 'en' ? 'Blocked in last 30 days' : 'पिछले 30 दिनों में ब्लॉक किए गए'}
-                </p>
-              </div>
-
-              <div className="bg-gradient-to-br from-purple-600/20 to-pink-600/20 rounded-xl p-6 border border-purple-500/50">
-                <div className="flex items-center gap-3 mb-3">
-                  <FileWarning className="w-8 h-8 text-purple-400" />
-                  <h4 className="text-lg font-bold text-white">
-                    {lang === 'en' ? 'AI Detection Rate' : 'AI पहचान दर'}
-                  </h4>
-                </div>
-                <p className="text-5xl font-bold text-purple-400 mb-2">99.8%</p>
-                <p className="text-sm text-gray-400">
-                  {lang === 'en' ? 'Accuracy on known APK threats' : 'ज्ञात APK खतरों पर सटीकता'}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-8 bg-cyan-600/20 rounded-xl p-6 border border-cyan-500/50">
-              <h4 className="text-xl font-bold text-cyan-400 mb-4">
-                {content.aiLearning}
-              </h4>
-              <div className="space-y-3 text-gray-300">
-                <p className="flex items-start gap-2">
-                  <span className="text-cyan-400">•</span>
-                  <span>
-                    {lang === 'en'
-                      ? 'AI continuously learns new APK distribution patterns from global cybersecurity databases'
-                      : 'AI वैश्विक साइबर सुरक्षा डेटाबेस से नए APK वितरण पैटर्न लगातार सीखता है'}
-                  </span>
-                </p>
-                <p className="flex items-start gap-2">
-                  <span className="text-cyan-400">•</span>
-                  <span>
-                    {lang === 'en'
-                      ? 'Detects new social engineering tactics used by scammers (updated daily)'
-                      : 'स्कैमर्स द्वारा उपयोग की जाने वाली नई सोशल इंजीनियरिंग रणनीतियों का पता लगाता है (दैनिक अपडेट)'}
-                  </span>
-                </p>
-                <p className="flex items-start gap-2">
-                  <span className="text-cyan-400">•</span>
-                  <span>
-                    {lang === 'en'
-                      ? 'Adapts to India-specific attack vectors (UPI scams, Aadhar frauds, fake job apps)'
-                      : 'भारत-विशिष्ट हमले के वैक्टर के लिए अनुकूलित (UPI स्कैम, Aadhar धोखाधड़ी, नकली नौकरी ऐप)'}
-                  </span>
-                </p>
-                <p className="flex items-start gap-2">
-                  <span className="text-cyan-400">•</span>
-                  <span>
-                    {lang === 'en'
-                      ? 'Machine learning models improve accuracy with every scan performed'
-                      : 'प्रत्येक स्कैन के साथ मशीन लर्निंग मॉडल सटीकता में सुधार करते हैं'}
-                  </span>
-                </p>
-              </div>
+          {/* Permissions */}
+          <div className="bg-black/50 rounded-lg p-4 mb-4">
+            <h4 className="font-bold mb-2">{t.permissions}</h4>
+            <p className="text-sm text-gray-400 mb-3">{t.permissionsDesc}</p>
+            <div className="flex flex-wrap gap-2">
+              {result.permissions.map((permission, index) => (
+                <span
+                  key={index}
+                  className={`text-xs px-3 py-1 rounded-full ${
+                    ['READ_CONTACTS', 'READ_SMS', 'CALL_PHONE', 'CAMERA', 'RECORD_AUDIO', 'ACCESS_FINE_LOCATION'].includes(permission)
+                      ? 'bg-orange-600/30 text-orange-400 border border-orange-500/50'
+                      : 'bg-gray-700 text-gray-300'
+                  }`}>
+                  {permission}
+                </span>
+              ))}
             </div>
           </div>
+
+          {/* Recommendations */}
+          <div className="bg-black/50 rounded-lg p-4 mb-4">
+            <h4 className="font-bold mb-3">{t.recommendations}</h4>
+            <ul className="space-y-2">
+              {result.recommendations.map((rec, index) => (
+                <li key={index} className="flex items-start gap-2 text-sm">
+                  <span className={`shrink-0 ${result.safe ? 'text-green-400' : 'text-red-400'}`}>•</span>
+                  <span className="text-gray-300">{rec}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <button
+            onClick={removeFile}
+            className="w-full bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-bold transition">
+            {t.scanAnother}
+          </button>
         </div>
       )}
 
-      {/* Disclaimer */}
-      <div className="mt-8 bg-yellow-600/20 backdrop-blur rounded-xl border border-yellow-500/50 p-4">
-        <p className="text-sm text-yellow-200">
-          <span className="font-bold">⚠️ AI Guardian:</span> {content.disclaimer}
-        </p>
+      {/* Features */}
+      <div className="bg-white/5 rounded-xl p-6 mb-6">
+        <h2 className="font-bold text-xl mb-4">{t.features}</h2>
+        <div className="grid md:grid-cols-2 gap-3">
+          {t.featureList.map((feature, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-green-400 shrink-0" />
+              <span className="text-sm text-gray-300">{feature}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Safety Tips */}
+      <div className="bg-white/5 rounded-xl p-6">
+        <h2 className="font-bold text-xl mb-4">{t.safetyTips}</h2>
+        <div className="space-y-3">
+          {t.tips.map((tip, index) => (
+            <div key={index} className="flex items-start gap-3">
+              <span className="bg-green-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
+                {index + 1}
+              </span>
+              <span className="text-sm text-gray-300">{tip}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
