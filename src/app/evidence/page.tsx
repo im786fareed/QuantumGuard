@@ -1,11 +1,11 @@
-import Scanner from '@/components/Scanner';
+import EvidenceCollector from '@/components/EvidenceCollector';
 import BackToHome from '@/components/BackToHome';
 
-export default function ScannerPage() {
+export default function EvidencePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black">
       <BackToHome />
-      <Scanner lang="en" />
+      <EvidenceCollector lang="en" />
     </div>
   );
 }

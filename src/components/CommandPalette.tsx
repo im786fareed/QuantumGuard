@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigationStore } from '@/store/navigation';
+import { useRouter } from 'next/navigation';
 import type { TabId } from '@/types/navigation';
 import { TAB_IDS } from '@/types/navigation';
 import { Search, X } from 'lucide-react';
@@ -9,6 +9,7 @@ import { Search, X } from 'lucide-react';
 type CommandItem = {
   id: TabId;
   label: string;
+  href: string;
 };
 
 const LABELS: Record<TabId, string> = {
@@ -41,7 +42,7 @@ const LABELS: Record<TabId, string> = {
 };
 
 export default function CommandPalette() {
-  const setTab = useNavigationStore((s) => s.setTab);
+  const router = useRouter();
 
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -52,6 +53,7 @@ export default function CommandPalette() {
       TAB_IDS.map((id) => ({
         id,
         label: LABELS[id] ?? id,
+        href: id === 'home' ? '/home' : `/${id}`,
       })),
     []
   );
@@ -73,13 +75,12 @@ export default function CommandPalette() {
       if (e.key === 'Escape') setOpen(false);
       if (e.key === 'ArrowDown')
         setHighlight((h) => Math.min(h + 1, filtered.length - 1));
-      if (e.key === 'ArrowUp')
-        setHighlight((h) => Math.max(h - 1, 0));
+      if (e.key === 'ArrowUp') setHighlight((h) => Math.max(h - 1, 0));
 
       if (e.key === 'Enter') {
         const selected = filtered[highlight];
         if (selected) {
-          setTab(selected.id);
+          router.push(selected.href);
           setOpen(false);
           setQuery('');
         }
@@ -88,7 +89,7 @@ export default function CommandPalette() {
 
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [filtered, highlight, open, setTab]);
+  }, [filtered, highlight, open, router]);
 
   if (!open) return null;
 
@@ -116,16 +117,14 @@ export default function CommandPalette() {
         {/* Results */}
         <div className="max-h-80 overflow-y-auto">
           {filtered.length === 0 && (
-            <div className="p-4 text-gray-400 text-sm">
-              No results found
-            </div>
+            <div className="p-4 text-gray-400 text-sm">No results found</div>
           )}
 
           {filtered.map((item, idx) => (
             <button
               key={item.id}
               onClick={() => {
-                setTab(item.id);
+                router.push(item.href);
                 setOpen(false);
                 setQuery('');
               }}
