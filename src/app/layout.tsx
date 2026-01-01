@@ -4,6 +4,8 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import Logo from "@/components/Logo";
+import InstallPrompt from "@/components/InstallPrompt";
+import CommandPalette from "@/components/CommandPalette";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -57,6 +59,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white min-h-screen`}
       >
+        <InstallPrompt />
+        <CommandPalette />
+
         {/* HEADER */}
         <header className="border-b border-white/10 bg-black/60 backdrop-blur sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -73,13 +78,13 @@ export default function RootLayout({
             </div>
 
             <div className="hidden md:flex gap-4 text-sm">
-              <a
+              
                 href="tel:1930"
                 className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 font-semibold"
               >
                 🚨 Emergency 1930
               </a>
-              <a
+              
                 href="mailto:quantumshield4india@gmail.com"
                 className="text-gray-400 hover:text-white"
               >
@@ -108,7 +113,7 @@ export default function RootLayout({
               <h3 className="font-semibold mb-3">Support</h3>
               <ul className="space-y-2 text-sm text-gray-400">
                 <li>
-                  <a
+                  
                     href="mailto:quantumshield4india@gmail.com"
                     className="hover:text-white"
                   >
