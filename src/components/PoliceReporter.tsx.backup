@@ -32,8 +32,8 @@ export default function PoliceReporter({ lang = 'en' }: { lang?: 'en' | 'hi' }) 
 
   const content = {
     en: {
-      title: '🚨 Report to Police',
-      subtitle: 'File official complaint to National Cybercrime Helpline',
+      title: '🚨 Report to Authorities',
+      subtitle: 'We help you file official complaints to Government authorities',
       scamType: 'Type of Scam',
       scamTypes: {
         digital_arrest: 'Digital Arrest Scam',
@@ -79,7 +79,7 @@ export default function PoliceReporter({ lang = 'en' }: { lang?: 'en' | 'hi' }) 
     },
     hi: {
       title: '🚨 पुलिस को रिपोर्ट करें',
-      subtitle: 'राष्ट्रीय साइबर अपराध हेल्पलाइन पर आधिकारिक शिकायत दर्ज करें',
+      subtitle: 'हम आपको सरकारी अधिकारियों को शिकायत दर्ज करने में मदद करते हैं',
       scamType: 'घोटाले का प्रकार',
       scamTypes: {
         digital_arrest: 'डिजिटल अरेस्ट घोटाला',
@@ -131,7 +131,6 @@ export default function PoliceReporter({ lang = 'en' }: { lang?: 'en' | 'hi' }) 
     e.preventDefault();
     setLoading(true);
     try {
-      // Simulate API call (replace with actual cybercrime.gov.in API when available)
       await new Promise(resolve => setTimeout(resolve, 2000));
       const referenceNumber = `QS${Date.now().toString().slice(-8)}`;
       const reportRecord = {
@@ -213,65 +212,68 @@ export default function PoliceReporter({ lang = 'en' }: { lang?: 'en' | 'hi' }) 
 
   return (
     <div className="max-w-3xl mx-auto p-6">
-      {/* Header */}
       <div className="bg-gradient-to-r from-red-600 to-orange-600 rounded-xl p-6 mb-6 text-white">
         <h1 className="text-3xl font-bold mb-2">{t.title}</h1>
         <p className="text-red-100">{t.subtitle}</p>
       </div>
 
-      {/* Emergency Contacts */}
       <div className="bg-white/5 rounded-xl p-6 mb-6">
         <h3 className="font-bold text-lg mb-4">{t.emergencyContacts}</h3>
         <div className="space-y-3">
-          (
-            <a
-              href="tel:1930"
-              className="flex items-center gap-3 bg-red-600/20 border border-red-500/50 rounded-lg p-4 hover:bg-red-600/30 transition"
-            >
-              <Phone className="w-5 h-5 text-red-400" />
-              <div>
-                <div className="font-semibold">{t.cybercrimeHelpline}</div>
-                <div className="text-sm text-gray-400">1930</div>
-              </div>
-            </a>
-          )
+          
+            href="tel:1930"
+            className="flex items-center gap-3 bg-red-600/20 border border-red-500/50 rounded-lg p-4 hover:bg-red-600/30 transition block"
+          >
+            <Phone className="w-5 h-5 text-red-400" />
+            <div>
+              <div className="font-semibold">{t.cybercrimeHelpline}</div>
+              <div className="text-sm text-gray-400">Call 1930 - National Cybercrime Helpline</div>
+            </div>
+          </a>
 
-          (
-            <a
-              href="https://cybercrime.gov.in"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between bg-blue-600/20 border border-blue-500/50 rounded-lg p-4 hover:bg-blue-600/30 transition"
-            >
-              <div className="flex items-center gap-3">
-                <Shield className="w-5 h-5 text-blue-400" />
-                <div>
-                  <div className="font-semibold">{t.cybercrimePortal}</div>
-                  <div className="text-sm text-gray-400">cybercrime.gov.in</div>
-                </div>
-              </div>
-              <ArrowRight className="w-5 h-5" />
-            </a>
-          )
-
-          (
-            <a
-              href="tel:100"
-              className="flex items-center gap-3 bg-orange-600/20 border border-orange-500/50 rounded-lg p-4 hover:bg-orange-600/30 transition"
-            >
-              <AlertTriangle className="w-5 h-5 text-orange-400" />
+          
+            href="https://cybercrime.gov.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between bg-blue-600/20 border border-blue-500/50 rounded-lg p-4 hover:bg-blue-600/30 transition block"
+          >
+            <div className="flex items-center gap-3">
+              <Shield className="w-5 h-5 text-blue-400" />
               <div>
-                <div className="font-semibold">{t.localPolice}</div>
-                <div className="text-2xl font-bold text-orange-400">100</div>
+                <div className="font-semibold">{t.cybercrimePortal}</div>
+                <div className="text-sm text-gray-400">Report online at cybercrime.gov.in</div>
               </div>
-            </a>
-          )
+            </div>
+            <ExternalLink className="w-5 h-5" />
+          </a>
+
+          
+            href="tel:100"
+            className="flex items-center gap-3 bg-orange-600/20 border border-orange-500/50 rounded-lg p-4 hover:bg-orange-600/30 transition block"
+          >
+            <AlertTriangle className="w-5 h-5 text-orange-400" />
+            <div>
+              <div className="font-semibold">{t.localPolice}</div>
+              <div className="text-sm text-gray-400">Call 100 for immediate emergency</div>
+            </div>
+          </a>
+          
+          <div className="bg-yellow-600/20 border border-yellow-500/50 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <Mail className="w-5 h-5 text-yellow-400 mt-1" />
+              <div>
+                <div className="font-semibold text-yellow-400">Need Help Filing Report?</div>
+                <div className="text-sm text-gray-300 mt-1">Contact QuantumShield Support</div>
+                <a href="mailto:quantumshield4india@gmail.com" className="text-blue-400 hover:text-blue-300 text-sm">
+                  quantumshield4india@gmail.com
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Report Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Scam Type */}
         <div className="bg-white/5 rounded-xl p-6">
           <label className="block font-bold mb-3">{t.scamType}</label>
           <select
@@ -286,7 +288,6 @@ export default function PoliceReporter({ lang = 'en' }: { lang?: 'en' | 'hi' }) 
           </select>
         </div>
 
-        {/* Scam Details */}
         <div className="bg-white/5 rounded-xl p-6 space-y-4">
           <h3 className="font-bold text-lg">{t.scamDetails}</h3>
 
@@ -335,7 +336,6 @@ export default function PoliceReporter({ lang = 'en' }: { lang?: 'en' | 'hi' }) 
           </div>
         </div>
 
-        {/* Your Details */}
         <div className="bg-white/5 rounded-xl p-6 space-y-4">
           <h3 className="font-bold text-lg">{t.yourDetails}</h3>
 
@@ -407,7 +407,6 @@ export default function PoliceReporter({ lang = 'en' }: { lang?: 'en' | 'hi' }) 
           </label>
         </div>
 
-        {/* Submit Button */}
         <button
           type="submit"
           disabled={loading}
